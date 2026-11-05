@@ -8,8 +8,8 @@
  * and direction respond to live and 48h-scrubbed wave height & period predictions.
  */
 
-const LA_COAST_CENTER = [29.35, -90.55];
-const DEFAULT_ZOOM = 8;
+const LA_COAST_CENTER = [29.58, -90.50];
+const DEFAULT_ZOOM = 8.0;
 
 const BADGE_COLOR_HEX = {
   purple: '#a855f7',
@@ -45,6 +45,8 @@ export class SurfMapController {
     this.map = L.map(this.mapElementId, {
       center: LA_COAST_CENTER,
       zoom: DEFAULT_ZOOM,
+      zoomSnap: 0.1,
+      zoomDelta: 0.5,
       minZoom: 5,
       maxZoom: 16,
       zoomControl: false,
