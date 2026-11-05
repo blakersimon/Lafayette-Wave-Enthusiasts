@@ -188,7 +188,15 @@ class LouisianaSurfApp {
     if (btnCycleMap) {
       btnCycleMap.addEventListener('click', () => {
         const nextLabel = this.mapController.cycleBasemap();
-        btnCycleMap.textContent = `Map: ${nextLabel}`;
+        btnCycleMap.textContent = nextLabel;
+      });
+    }
+
+    // 1-Click Bathymetry & Seafloor Overlays Switcher (Both, Contours, 3D Relief, OFF)
+    const btnBathy = document.getElementById('btn-toggle-bathy');
+    if (btnBathy) {
+      btnBathy.addEventListener('click', () => {
+        this.mapController.cycleBathy();
       });
     }
 
@@ -475,7 +483,7 @@ class LouisianaSurfApp {
       this.mapController.renderSpots(this.spots, this.activeSpotId, this.scrubbedHourIndex);
       this.mapController.renderBuoys(this.buoys, this.spots);
       this.scrubToHour(this.scrubbedHourIndex);
-      this.updateStatusText('HOLLY BEACH & GRAND ISLE SURF RADAR');
+      this.updateStatusText('GULF COAST SURF RADAR');
     } catch (err) {
       console.error('Failed to load telemetry:', err);
       this.updateStatusText('OFFLINE SNAPSHOT MODE');
@@ -541,7 +549,8 @@ class LouisianaSurfApp {
       if (dotEl) dotEl.style.background = hex;
       if (waveEl) waveEl.textContent = `${Number(heightFt ?? 0).toFixed(1)} ft`;
       if (scoreEl) {
-        scoreEl.textContent = `Score ${score ?? '--'}`;
+        scoreEl.textContent = String(score ?? '--');
+        scoreEl.title = `Surf Score: ${score ?? '--'} out of 100`;
         scoreEl.style.color = hex;
         scoreEl.style.background = `${hex}28`;
       }

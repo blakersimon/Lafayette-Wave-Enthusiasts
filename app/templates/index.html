@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 
   <!-- Application Stylesheet -->
-  <link rel="stylesheet" href="/static/css/styles.css?v=15">
+  <link rel="stylesheet" href="/static/css/styles.css?v=19">
 </head>
 <body>
   <div class="app-stage">
@@ -32,7 +32,7 @@
         </div>
         <div class="brand-titles">
           <h1 class="brand-title">Lafayette Wave Enthusiasts</h1>
-          <span class="brand-tag" id="status-text">HOLLY BEACH &amp; GRAND ISLE SURF RADAR</span>
+          <span class="brand-tag" id="status-text">GULF COAST SURF RADAR</span>
         </div>
       </div>
 
@@ -42,19 +42,20 @@
           <span class="spot-pill-dot" id="dot-holly_beach"></span>
           <span class="spot-pill-name">Holly Beach</span>
           <span class="spot-pill-wave" id="wave-holly_beach">-- ft</span>
-          <span class="spot-pill-score" id="score-holly_beach" title="Surf Score out of 100">Score --</span>
+          <span class="spot-pill-score" id="score-holly_beach" title="Surf Score out of 100">--</span>
         </button>
         <button type="button" class="spot-pill" id="pill-grand_isle" data-spot-id="grand_isle">
           <span class="spot-pill-dot" id="dot-grand_isle"></span>
           <span class="spot-pill-name">Grand Isle</span>
           <span class="spot-pill-wave" id="wave-grand_isle">-- ft</span>
-          <span class="spot-pill-score" id="score-grand_isle" title="Surf Score out of 100">Score --</span>
+          <span class="spot-pill-score" id="score-grand_isle" title="Surf Score out of 100">--</span>
         </button>
       </nav>
 
       <!-- Compact Map Controls -->
       <div class="top-bar-actions">
-        <button type="button" class="btn-pill-ghost" id="btn-cycle-basemap" title="Click to cycle through 5 modern basemap styles">Map: Deep Ocean</button>
+        <button type="button" class="btn-pill-ghost" id="btn-cycle-basemap" title="Click to cycle through 5 modern basemap styles">Deep Ocean</button>
+        <button type="button" class="btn-pill-ghost" id="btn-toggle-bathy" title="Cycle bathymetry: Both, Contours, 3D Relief, or Off">Bathy: Both</button>
         <button type="button" class="btn-pill-ghost" id="btn-view-coast" title="Reset map to full Louisiana Coast">LA Coast</button>
         <button type="button" class="btn-pill-ghost" id="btn-toggle-vectors" title="Toggle offshore buoys on map">Buoys: ON</button>
         <button type="button" class="btn-pill-accent" id="btn-refresh" title="Refresh live buoys &amp; surf forecasts">

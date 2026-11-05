@@ -98,7 +98,7 @@ def create_app() -> FastAPI:
 
     templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
-    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+    @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse, include_in_schema=False)
     async def index(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
             request=request,

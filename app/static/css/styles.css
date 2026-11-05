@@ -129,13 +129,13 @@ canvas {
   position: absolute;
   inset-block-start: 14px;
   inset-inline-start: 16px;
-  inset-inline-end: 456px;
+  inset-inline-end: 460px;
   z-index: 900;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 14px;
-  padding: 6px 16px 6px 8px;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px 4px 5px;
   border-radius: 999px;
   background: var(--bg-glass-pill);
   backdrop-filter: blur(20px);
@@ -152,7 +152,7 @@ canvas {
 .brand-cluster {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -192,9 +192,9 @@ canvas {
 
 .brand-title {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 0.98rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   color: var(--text-primary);
   line-height: 1.15;
   white-space: nowrap;
@@ -203,9 +203,9 @@ canvas {
 .brand-tag {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.74rem;
+  font-size: 0.64rem;
   color: var(--seafoam);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -214,26 +214,28 @@ canvas {
 .spot-switcher {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   background: rgba(4, 13, 26, 0.75);
-  padding: 5px;
+  padding: 3px;
   border-radius: 999px;
   border: 1px solid rgba(125, 211, 252, 0.18);
+  flex-shrink: 0;
 }
 
 .spot-pill {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 16px;
+  gap: 5px;
+  padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-subtle);
   font-family: var(--font-sans);
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease;
 }
 
@@ -250,15 +252,15 @@ canvas {
 }
 
 .spot-pill-dot {
-  inline-size: 9px;
-  block-size: 9px;
+  inline-size: 7px;
+  block-size: 7px;
   border-radius: 50%;
   background: var(--surf-good);
 }
 
 .spot-pill-wave {
   font-family: var(--font-mono);
-  font-size: 1.05rem;
+  font-size: 0.88rem;
   font-weight: 800;
   color: var(--swell-cyan);
   font-variant-numeric: tabular-nums;
@@ -266,31 +268,33 @@ canvas {
 
 .spot-pill-score {
   font-family: var(--font-mono);
-  font-size: 0.90rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 3px 10px;
+  padding: 1px 6px;
   border-radius: 999px;
   background: rgba(16, 185, 129, 0.22);
   color: #34d399;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 .top-bar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .btn-pill-ghost {
-  padding: 8px 16px;
+  padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid var(--border-ocean);
   background: rgba(15, 35, 62, 0.65);
   color: var(--text-secondary);
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -303,15 +307,16 @@ canvas {
 .btn-pill-accent {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 18px;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--border-highlight);
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.38), rgba(45, 212, 191, 0.28));
   color: var(--text-primary);
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-pill-accent:hover {

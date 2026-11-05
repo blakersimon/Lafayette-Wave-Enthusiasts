@@ -316,7 +316,7 @@ async def warm_live_cache_background() -> None:
 # REST API ENDPOINTS
 # ==============================================================================
 
-@router.get("/health", response_model=HealthCheckResponse)
+@router.api_route("/health", methods=["GET", "HEAD"], response_model=HealthCheckResponse)
 async def health_check() -> HealthCheckResponse:
     """
     Lightweight readiness/liveness probe for Railway deployment healthchecks.
