@@ -252,6 +252,7 @@ export class SurfMapController {
             <span class="swell-crest-arc arc-1"></span>
             <span class="swell-crest-arc arc-2"></span>
             <span class="swell-crest-arc arc-3"></span>
+            <span class="swell-crest-arc arc-4"></span>
           </div>
         </div>
       `;
