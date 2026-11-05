@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Lafayette Wave Enthusiasts — Interactive Gulf Coast surf radar, dual animated wave predictors, and multi-source consensus for Holly Beach and Grand Isle, LA.">
+  <title>{{ app_name | default("Lafayette Wave Enthusiasts") }} — Holly Beach &amp; Grand Isle Surf Radar</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/logo.svg">
+
+  <!-- Google Fonts: Outfit, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&amp;family=Outfit:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+
+  <!-- Leaflet 1.9.4 CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="/static/css/styles.css?v=11">
+</head>
+<body>
+  <div class="app-stage">
+    <!-- Full-Viewport Interactive Map -->
+    <div id="surf-map" class="surf-map-canvas" aria-label="Interactive Louisiana Surf Map"></div>
+
+    <!-- Compact Floating Top Bar -->
+    <header class="floating-top-bar" role="banner">
+      <div class="brand-cluster">
+        <div class="brand-wave-emblem" aria-hidden="true">
+          <img src="/static/img/logo.svg" alt="Lafayette Wave Enthusiasts Emblem" width="48" height="48">
+        </div>
+        <div class="brand-titles">
+          <h1 class="brand-title">Lafayette Wave Enthusiasts</h1>
+          <span class="brand-tag" id="status-text">HOLLY BEACH &amp; GRAND ISLE SURF RADAR</span>
+        </div>
+      </div>
+
+      <!-- Quick Map Spot Switcher Pills -->
+      <nav class="spot-switcher" aria-label="Select Surf Spot">
+        <button type="button" class="spot-pill active" id="pill-holly_beach" data-spot-id="holly_beach">
+          <span class="spot-pill-dot" id="dot-holly_beach"></span>
+          <span class="spot-pill-name">Holly Beach</span>
+          <span class="spot-pill-wave" id="wave-holly_beach">-- ft</span>
+          <span class="spot-pill-score" id="score-holly_beach" title="Surf Score out of 100">Score --</span>
+        </button>
+        <button type="button" class="spot-pill" id="pill-grand_isle" data-spot-id="grand_isle">
+          <span class="spot-pill-dot" id="dot-grand_isle"></span>
+          <span class="spot-pill-name">Grand Isle</span>
+          <span class="spot-pill-wave" id="wave-grand_isle">-- ft</span>
+          <span class="spot-pill-score" id="score-grand_isle" title="Surf Score out of 100">Score --</span>
+        </button>
+      </nav>
+
+      <!-- Compact Map Controls -->
+      <div class="top-bar-actions">
+        <button type="button" class="btn-pill-ghost" id="btn-cycle-basemap" title="Click to cycle through 5 modern basemap styles">Map: Deep Ocean</button>
+        <button type="button" class="btn-pill-ghost" id="btn-view-coast" title="Reset map to full Louisiana Coast">LA Coast</button>
+        <button type="button" class="btn-pill-ghost" id="btn-toggle-vectors" title="Toggle offshore buoys on map">Buoys: ON</button>
+        <button type="button" class="btn-pill-accent" id="btn-refresh" title="Refresh live buoys &amp; surf forecasts">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 3.5v3.9h-3.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Sync</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Bottom-Left Floating 48-Hour Wave Forecast Timeline & Radar Player -->
+    <section class="time-scrubber-dock" aria-label="48-Hour Animated Wave Forecast Scrubber">
+      <div class="scrubber-top-row">
+        <div class="scrubber-label-group">
+          <button type="button" class="btn-scrubber-play" id="btn-play-timeline" title="Auto-play 48-hour forecast timeline" aria-label="Play 48-hour forecast">
+            <span id="scrubber-play-icon">&#9654;</span>
+          </button>
+          <div class="scrubber-title-stack">
+            <div class="scrubber-eyebrow-row">
+              <span class="scrubber-eyebrow">48H FORECAST TIMELINE</span>
+              <span class="scrubber-live-pill" id="scrubber-mode-badge">LIVE NOW</span>
+            </div>
+            <strong class="scrubber-time-text" id="scrubber-time-display">Loading 48h wave timeline...</strong>
+          </div>
+        </div>
+        <div class="scrubber-quick-btns">
+          <button type="button" class="btn-scrubber-chip active" id="btn-scrub-now" title="Jump to current live conditions">Now</button>
+          <button type="button" class="btn-scrubber-chip" id="btn-scrub-dawn" title="Jump to tomorrow morning 6:00 AM Dawn Patrol">Dawn 6 AM</button>
+          <button type="button" class="btn-scrubber-chip chip-golden" id="btn-open-best-spot" title="Jump to peak 48h surf window">
+            &#9728; Best Window
+          </button>
+        </div>
+      </div>
+
+      <!-- Visual 48-Hour Wave Height & Quality Sparkbar + Range Slider -->
+      <div class="scrubber-visual-track-wrap">
+        <div class="scrubber-sparkbar" id="scrubber-sparkbar" aria-hidden="true">
+          <!-- 48 hourly wave bars injected dynamically -->
+        </div>
+        <input
+          type="range"
+          id="forecast-time-slider"
+          class="forecast-range-slider"
+          min="0"
+          max="47"
+          value="0"
+          step="1"
+          aria-label="Scrub 48-hour surf prediction timeline"
+        >
+      </div>
+
+      <!-- Real Day & Clock Axis Ticks -->
+      <div class="scrubber-ticks-row" id="scrubber-ticks">
+        <span class="scrubber-bound">Now</span>
+        <span class="scrubber-bound">+12h</span>
+        <span class="scrubber-bound">+24h</span>
+        <span class="scrubber-bound">+36h</span>
+        <span class="scrubber-bound">+48h</span>
+      </div>
+    </section>
+
+    <!-- Simplified Right Panel: Both Beaches on Unified Cards (Wave Animation + Score Bar + Vitals) -->
+    <aside class="surf-card-panel" id="spot-drawer" aria-label="Holly Beach and Grand Isle Surf Cards">
+      <!-- Slim Top Navigation Bar -->
+      <div class="panel-top-nav">
+        <div class="card-tabs-nav" role="tablist" aria-label="Forecast Views">
+          <button type="button" role="tab" aria-selected="true" class="card-tab active" data-tab="overview">
+            Surf Check
+          </button>
+          <button type="button" role="tab" aria-selected="false" class="card-tab" data-tab="timeline">
+            48h Chart
+          </button>
+          <button type="button" role="tab" aria-selected="false" class="card-tab" data-tab="sources">
+            Sources (<span id="tab-source-count">7</span>)
+          </button>
+        </div>
+
+        <div class="panel-top-actions">
+          <button type="button" class="btn-icon-circle" id="btn-pause-waves" title="Pause or play both wave animations" aria-label="Toggle wave animation">
+            <span id="wave-anim-icon">&#10074;&#10074;</span>
+          </button>
+          <button type="button" class="btn-icon-circle btn-mobile-collapse" id="btn-drawer-toggle" aria-expanded="true" title="Minimize panel">
+            &#9662;
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Body -->
+      <div class="drawer-scroll-body" id="drawer-scroll-body">
+        <div class="divergence-banner hidden" id="divergence-banner" role="alert">
+          <span class="divergence-icon" aria-hidden="true">!</span>
+          <span id="divergence-text">Sources show moderate variance.</span>
+        </div>
+
+        <!-- ============================================================
+             TAB 1: TWO UNIFIED BEACH CARDS (Wave Tank + Score Bar + Info)
+             ============================================================ -->
+        <div class="tab-pane active" id="tab-overview" role="tabpanel">
+          <div class="unified-beaches-stack" role="region" aria-label="Holly Beach and Grand Isle Live Surf Cards">
+
+            <!-- ========================================================
+                 BEACH CARD 1: HOLLY BEACH (All-in-One Animation + Info)
+                 ======================================================== -->
+            <article class="beach-unified-card active-spot" id="spot-card-holly-beach" data-spot-id="holly_beach" tabindex="0" aria-label="Holly Beach Surf Card">
+              <!-- Live Animated Wave Tank for Holly Beach -->
+              <div class="beach-wave-stage">
+                <canvas id="wave-tank-canvas" class="wave-tank-canvas" aria-label="Holly Beach animated wave simulation"></canvas>
+                <div class="beach-wave-overlay-top">
+                  <div>
+                    <div class="beach-title-row">
+                      <h2 class="beach-name" id="drawer-spot-name">Holly Beach</h2>
+                      <span class="parish-chip" id="drawer-parish-badge">CAMERON PARISH</span>
+                      <span class="sr-only" id="drawer-knet-badge">K=0.65</span>
+                      <span class="sr-only" id="drawer-coords-badge">29.77°N</span>
+                    </div>
+                  </div>
+                  <span class="confidence-pill" id="hero-confidence-pill">Conf: 89%</span>
+                </div>
+
+                <div class="beach-wave-overlay-bottom">
+                  <div class="beach-wave-hero">
+                    <span class="beach-ft-giant" id="hb-breaking-ft">-- ft</span>
+                    <span class="sr-only" id="hero-breaking-ft">-- ft</span>
+                    <span class="beach-human-scale" id="hb-breaking-range">--</span>
+                    <span class="sr-only" id="hero-breaking-range">--</span>
+                  </div>
+                  <span class="decision-pill badge-crimson" id="hb-decision-text">CHECKING...</span>
+                  <span class="sr-only" id="hero-decision-badge">CHECKING...</span>
+                </div>
+              </div>
+
+              <!-- Clear 0-100 Surf Score Bar -->
+              <div class="surf-score-bar-block" id="score-orb">
+                <div class="score-bar-header">
+                  <span class="score-bar-title">SURF SCORE</span>
+                  <div class="score-bar-readout">
+                    <strong id="hb-surf-score">--</strong><span class="score-denom"> / 100</span>
+                    <span class="sr-only" id="hero-surf-score">--</span>
+                  </div>
+                </div>
+                <div class="score-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="13" id="hb-score-progressbar">
+                  <div class="score-bar-fill" id="hb-score-bar-fill" style="width: 13%;"></div>
+                </div>
+                <div class="score-bar-scale">
+                  <span>0 Flat</span>
+                  <span>30 Fair</span>
+                  <span>55 Good</span>
+                  <span>80+ Firing</span>
+                </div>
+              </div>
+
+              <!-- Simplified 2x2 Core Info Grid (Swell, Wind, Tide, Water & Air Temp) -->
+              <div class="beach-info-grid">
+                <div class="beach-info-tile">
+                  <span class="vital-label">SWELL PULSE</span>
+                  <strong class="vital-value" id="hb-swell-pulse">--s --</strong>
+                  <span class="vital-sub" id="hb-swell-deg">--&deg;</span>
+                  <span class="sr-only" id="vital-swell-period">--s</span>
+                  <span class="sr-only" id="vital-swell-dir">--</span>
+                </div>
+                <div class="beach-info-tile">
+                  <span class="vital-label">WIND TEXTURE</span>
+                  <strong class="vital-value" id="hb-wind-val">-- mph --</strong>
+                  <span class="vital-sub"><span class="regime-badge" id="vital-wind-regime">--</span></span>
+                  <span class="sr-only" id="vital-wind-speed">--</span>
+                </div>
+                <div class="beach-info-tile">
+                  <span class="vital-label">TIDE STAGE</span>
+                  <strong class="vital-value" id="hb-tide-ht">-- ft</strong>
+                  <span class="vital-sub" id="hb-tide-val">--</span>
+                  <span class="sr-only" id="vital-tide-height">--</span>
+                  <span class="sr-only" id="vital-tide-state">--</span>
+                </div>
+                <div class="beach-info-tile">
+                  <span class="vital-label">WATER &amp; AIR TEMP</span>
+                  <strong class="vital-value" id="hb-temp-val">
+                    <span id="hb-water-temp">Water: --&deg;F</span>
+                    <span class="sr-only" id="vital-water-main">Water: --&deg;F</span>
+                  </strong>
+                  <span class="vital-sub" id="vital-water-sub">
+                    <span id="hb-air-temp">Air: --&deg;F</span><span class="sr-only" id="vital-air-temp">--&deg;F</span> &bull; <span id="vital-water-notes">Boardshorts</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- 1-Line Best 48h Window Footer -->
+              <div class="beach-best-footer">
+                <div class="best-footer-left">
+                  <span class="best-footer-tag">&#9728; BEST 48H:</span>
+                  <strong id="gw-hb-peak-time">--</strong>
+                  <span class="best-footer-meta" id="gw-hb-meta">--</span>
+                </div>
+                <span class="best-footer-board" id="hb-board-pick">Longboard</span>
+              </div>
+            </article>
+
+            <!-- ========================================================
+                 BEACH CARD 2: GRAND ISLE (All-in-One Animation + Info)
+                 ======================================================== -->
+            <article class="beach-unified-card" id="spot-card-grand-isle" data-spot-id="grand_isle" tabindex="0" aria-label="Grand Isle Surf Card">
+              <!-- Live Animated Wave Tank for Grand Isle -->
+              <div class="beach-wave-stage">
+                <canvas id="wave-tank-grand-isle" class="wave-tank-canvas" aria-label="Grand Isle animated wave simulation"></canvas>
+                <div class="beach-wave-overlay-top">
+                  <div>
+                    <div class="beach-title-row">
+                      <h2 class="beach-name">Grand Isle</h2>
+                      <span class="parish-chip">JEFFERSON PARISH</span>
+                    </div>
+                  </div>
+                  <span class="confidence-pill" id="gi-confidence-pill">Conf: 89%</span>
+                </div>
+
+                <div class="beach-wave-overlay-bottom">
+                  <div class="beach-wave-hero">
+                    <span class="beach-ft-giant" id="gi-breaking-ft">-- ft</span>
+                    <span class="beach-human-scale" id="gi-breaking-range">--</span>
+                  </div>
+                  <span class="decision-pill badge-amber" id="gi-decision-text">CHECKING...</span>
+                </div>
+              </div>
+
+              <!-- Clear 0-100 Surf Score Bar -->
+              <div class="surf-score-bar-block">
+                <div class="score-bar-header">
+                  <span class="score-bar-title">SURF SCORE</span>
+                  <div class="score-bar-readout">
+                    <strong id="gi-surf-score">--</strong><span class="score-denom"> / 100</span>
+                  </div>
+                </div>
+                <div class="score-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="34" id="gi-score-progressbar">
+                  <div class="score-bar-fill" id="gi-score-bar-fill" style="width: 34%;"></div>
+                </div>
+                <div class="score-bar-scale">
+                  <span>0 Flat</span>
+                  <span>30 Fair</span>
+                  <span>55 Good</span>
+                  <span>80+ Firing</span>
+                </div>
+              </div>
+
+              <!-- Simplified 2x2 Core Info Grid (Swell, Wind, Tide, Water & Air Temp) -->
+              <div class="beach-info-grid">
+                <div class="beach-info-tile">
+                  <span class="vital-label">SWELL PULSE</span>
+                  <strong class="vital-value" id="gi-swell-pulse">--s --</strong>
+                  <span class="vital-sub" id="gi-swell-deg">--&deg;</span>
+                </div>
+                <div class="beach-info-tile">
+                  <span class="vital-label">WIND TEXTURE</span>
+                  <strong class="vital-value" id="gi-wind-val">-- mph --</strong>
+                  <span class="vital-sub"><span class="regime-badge" id="gi-wind-regime">--</span></span>
+                </div>
+                <div class="beach-info-tile">
+                  <span class="vital-label">TIDE STAGE</span>
+                  <strong class="vital-value" id="gi-tide-ht">-- ft</strong>
+                  <span class="vital-sub" id="gi-tide-val">--</span>
+                </div>
+                <div class="beach-info-tile">
+                  <span class="vital-label">WATER &amp; AIR TEMP</span>
+                  <strong class="vital-value" id="gi-temp-val">
+                    <span id="gi-water-temp">Water: --&deg;F</span>
+                  </strong>
+                  <span class="vital-sub">
+                    <span id="gi-air-temp">Air: --&deg;F</span> &bull; <span id="gi-water-notes">Boardshorts</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- 1-Line Best 48h Window Footer -->
+              <div class="beach-best-footer">
+                <div class="best-footer-left">
+                  <span class="best-footer-tag">&#9728; BEST 48H:</span>
+                  <strong id="gw-gi-peak-time">--</strong>
+                  <span class="best-footer-meta" id="gw-gi-meta">--</span>
+                </div>
+                <span class="best-footer-board" id="gi-board-pick">Longboard</span>
+              </div>
+            </article>
+
+          </div>
+
+          <!-- Hidden compatibility hooks for legacy tests -->
+          <div class="sr-only" aria-hidden="true">
+            <span id="quiver-board-primary"></span>
+            <span id="quiver-board-alt"></span>
+            <span id="quiver-board-rationale"></span>
+            <span id="quiver-wetsuit-primary"></span>
+            <span id="quiver-wetsuit-acc"></span>
+            <span id="quiver-wetsuit-note"></span>
+            <span id="gw-window-title"></span>
+            <span id="gw-peak-badge"></span>
+            <span id="gw-human-verdict"></span>
+            <span id="gw-peak-wave"></span>
+            <span id="gw-wind-summary"></span>
+            <span id="gw-tide-summary"></span>
+            <span id="h2h-winner-badge"></span>
+            <span id="h2h-verdict-text"></span>
+            <span id="logistics-head-to-head"></span>
+            <span id="logistics-bottom"></span>
+            <span id="logistics-swell-window"></span>
+            <span id="logistics-access"></span>
+            <button type="button" id="btn-preview-golden-wave">Preview</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: 48-HOUR FORECAST CHART -->
+        <div class="tab-pane" id="tab-timeline" role="tabpanel">
+          <div class="chart-card-box">
+            <div class="chart-header-row">
+              <h3 class="pane-subtitle">48-Hour Breaking Wave Height (ft) &amp; Swell Period (s)</h3>
+              <span class="pane-hint">Click or scrub slider to animate waves</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="forecast-chart" aria-label="48-hour surf forecast chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: MULTI-SOURCE CONSENSUS MATRIX -->
+        <div class="tab-pane" id="tab-sources" role="tabpanel">
+          <div class="sources-header-row">
+            <h3 class="pane-subtitle" id="source-table-caption">All Forecast Sources Combined</h3>
+            <span class="mono-badge" id="matrix-source-summary">-- sources</span>
+          </div>
+          <p class="sources-subtext">
+            We combine NOAA Buoys, Open-Meteo WW3, Surfline, Surf-Forecast.com, Surf Captain &amp; NWS into a single shoaled breaking wave call.
+          </p>
+
+          <div tabindex="0" role="region" aria-labelledby="source-table-caption" class="table-wrapper">
+            <table class="source-comparison-table">
+              <thead>
+                <tr>
+                  <th scope="col">Source</th>
+                  <th scope="col" class="num-col">Wave</th>
+                  <th scope="col" class="num-col">Period</th>
+                  <th scope="col" class="num-col">Wind</th>
+                  <th scope="col">Report</th>
+                  <th scope="col" class="num-col">Wt</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody id="source-matrix-tbody">
+                <!-- Populated dynamically by drawer.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- External Libraries: Leaflet 1.9.4 & Chart.js 4.4.1 -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin=""></script>
+
+  <!-- Application ES6 Modules -->
+  <script type="module" src="/static/js/app.js?v=11"></script>
+</body>
+</html>

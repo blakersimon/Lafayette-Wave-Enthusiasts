@@ -1,0 +1,2283 @@
+/* ==========================================================================
+   Louisiana Surf Finder — Coastal Ocean Glass UI & Animated Wave System
+   Implements modern-web-guidance: content-first-noise-reduction, motion,
+   dark-mode, responsive-table, css-layout
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Coastal Twilight Palette */
+  --bg-ocean-deep: #061325;
+  --bg-glass-card: rgba(9, 24, 44, 0.84);
+  --bg-glass-pill: rgba(8, 21, 38, 0.88);
+  --bg-inner-tile: rgba(15, 35, 62, 0.62);
+  --bg-table-header: #0b1e36;
+  --bg-table-row-sticky: #09192e;
+
+  /* Borders & Glows */
+  --border-ocean: rgba(125, 211, 252, 0.18);
+  --border-highlight: rgba(56, 189, 248, 0.42);
+
+  /* Text Hierarchy */
+  --text-primary: #f8fafc;
+  --text-secondary: #bae6fd;
+  --text-muted: #7dd3fc;
+  --text-subtle: #94a3b8;
+
+  /* Surf Quality Accents */
+  --surf-epic: #a855f7;
+  --surf-good: #10b981;
+  --surf-fair: #f59e0b;
+  --surf-poor: #ef4444;
+  --swell-cyan: #38bdf8;
+  --seafoam: #2dd4bf;
+  --sand-gold: #fbbf24;
+
+  /* Font Stacks */
+  --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Scrollbars (never transition scrollbar-color) */
+  --scrollbar-thumb: rgba(56, 189, 248, 0.35);
+  --scrollbar-track: rgba(6, 19, 37, 0.35);
+
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  block-size: 100dvh;
+  inline-size: 100%;
+  overflow: hidden;
+  background-color: var(--bg-ocean-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-inline-size: 100%;
+}
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   1. Full-Viewport Map Stage
+   ========================================================================== */
+.app-stage {
+  position: relative;
+  block-size: 100dvh;
+  inline-size: 100%;
+  overflow: hidden;
+}
+
+.surf-map-canvas {
+  position: absolute;
+  inset: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  background: #061527;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   2. Single Compact Floating Top Pill Bar (< 9% viewport height)
+   ========================================================================== */
+.floating-top-bar {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-inline-start: 16px;
+  inset-inline-end: 456px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 999px;
+  background: var(--bg-glass-pill);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-ocean);
+  box-shadow: 0 12px 32px rgba(2, 8, 20, 0.48);
+}
+
+.brand-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-inline-size: 0;
+}
+
+.brand-wave-emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 50px;
+  block-size: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 35% 35%, rgba(56, 189, 248, 0.28), rgba(4, 13, 26, 0.88));
+  border: 1.5px solid rgba(125, 211, 252, 0.45);
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.38), 0 0 8px rgba(245, 158, 11, 0.25);
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.brand-wave-emblem img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-cluster:hover .brand-wave-emblem {
+  transform: scale(1.06);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.58), 0 0 12px rgba(245, 158, 11, 0.4);
+  border-color: rgba(125, 211, 252, 0.7);
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.brand-tag {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--seafoam);
+  letter-spacing: 0.05em;
+}
+
+/* Spot Switcher Pills */
+.spot-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(4, 13, 26, 0.65);
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.12);
+}
+
+.spot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-subtle);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+.spot-pill:hover {
+  color: var(--text-primary);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.spot-pill.active {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.28), rgba(45, 212, 191, 0.18));
+  border-color: var(--border-highlight);
+  color: var(--text-primary);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.22);
+}
+
+.spot-pill-dot {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--surf-good);
+}
+
+.spot-pill-wave {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--swell-cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.spot-pill-score {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  font-variant-numeric: tabular-nums;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-pill-ghost {
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-ocean);
+  background: rgba(15, 35, 62, 0.55);
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-pill-ghost:hover {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: var(--swell-cyan);
+}
+
+.btn-pill-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-highlight);
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(45, 212, 191, 0.22));
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-pill-accent:hover {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.45), rgba(45, 212, 191, 0.35));
+}
+
+/* ==========================================================================
+   3. Floating 48-Hour Wave Scrubber Dock (Bottom-Left)
+   ========================================================================== */
+.time-scrubber-dock {
+  position: absolute;
+  inset-block-end: 16px;
+  inset-inline-start: 16px;
+  z-index: 880;
+  inline-size: min(560px, calc(100% - 472px));
+  background: rgba(6, 19, 37, 0.92);
+  backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(56, 189, 248, 0.32);
+  border-radius: 20px;
+  padding: 11px 16px 10px;
+  box-shadow: 0 16px 40px rgba(2, 8, 20, 0.68);
+}
+
+.scrubber-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-block-end: 9px;
+  flex-wrap: wrap;
+}
+
+.scrubber-label-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-scrubber-play {
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(56, 189, 248, 0.55);
+  background: rgba(14, 116, 144, 0.35);
+  color: #ffffff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-scrubber-play:hover,
+.btn-scrubber-play.playing {
+  background: rgba(56, 189, 248, 0.38);
+  border-color: #38bdf8;
+  transform: scale(1.06);
+}
+
+.scrubber-title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scrubber-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scrubber-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  color: #bae6fd;
+}
+
+.scrubber-live-pill {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.22);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+.scrubber-time-text {
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.scrubber-quick-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-scrubber-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  background: rgba(15, 35, 62, 0.72);
+  color: #e2e8f0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-scrubber-chip.active {
+  border-color: var(--swell-cyan);
+  background: rgba(56, 189, 248, 0.22);
+  color: #ffffff;
+}
+
+.btn-scrubber-chip.chip-golden {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.18);
+  color: #fef08a;
+}
+
+.btn-scrubber-chip:hover {
+  transform: translateY(-1px);
+}
+
+/* Visual 48-Hour Wave Height & Quality Sparkbar + Range Slider */
+.scrubber-visual-track-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px 2px;
+  border-radius: 12px;
+  background: rgba(11, 27, 48, 0.85);
+  border: 1px solid rgba(125, 211, 252, 0.16);
+}
+
+.scrubber-sparkbar {
+  display: grid;
+  grid-template-columns: repeat(48, 1fr);
+  align-items: end;
+  gap: 2px;
+  block-size: 26px;
+  padding-inline: 2px;
+}
+
+.spark-col {
+  block-size: 100%;
+  display: flex;
+  align-items: flex-end;
+  cursor: pointer;
+  position: relative;
+}
+
+.spark-col .spark-bar {
+  inline-size: 100%;
+  block-size: var(--bar-h, 30%);
+  background: var(--bar-color, #38bdf8);
+  border-radius: 2px 2px 0 0;
+  opacity: 0.62;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.spark-col:hover .spark-bar {
+  opacity: 0.95;
+}
+
+.spark-col.active .spark-bar {
+  opacity: 1;
+  background: #ffffff;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.spark-col.best-hour::before {
+  content: "★";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: #fde047;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.forecast-range-slider {
+  inline-size: 100%;
+  accent-color: var(--swell-cyan);
+  cursor: pointer;
+  block-size: 6px;
+  margin: 0;
+}
+
+.scrubber-ticks-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-start: 5px;
+  padding-inline: 4px;
+}
+
+.scrubber-bound {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #bae6fd;
+}
+
+.scrubber-bound.tick-now {
+  color: #34d399;
+}
+
+/* ==========================================================================
+   4. Floating Right Surf Card Panel & Animated Wave Tank Header
+   ========================================================================== */
+.surf-card-panel {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-block-end: 14px;
+  inset-inline-end: 14px;
+  inline-size: 440px;
+  max-inline-size: calc(100vw - 28px);
+  z-index: 920;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  background: var(--bg-glass-card);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--border-ocean);
+  box-shadow: 0 20px 50px rgba(2, 8, 20, 0.65);
+  overflow: hidden;
+}
+
+/* Live Animated Wave Tank Stage */
+.wave-tank-stage {
+  position: relative;
+  block-size: 182px;
+  inline-size: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-block-end: 1px solid var(--border-ocean);
+}
+
+.wave-tank-canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.wave-tank-top-overlay {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 16px 0;
+}
+
+.spot-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-end: 2px;
+}
+
+.parish-chip,
+.knet-chip {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(6, 19, 37, 0.65);
+  color: var(--text-secondary);
+  border: 1px solid rgba(125, 211, 252, 0.22);
+}
+
+.wave-spot-title {
+  font-family: var(--font-display);
+  font-size: 1.42rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+.wave-tank-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-icon-circle {
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(6, 19, 37, 0.6);
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-mobile-collapse {
+  display: none;
+}
+
+.wave-tank-bottom-overlay {
+  position: absolute;
+  inset-inline: 16px;
+  inset-block-end: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.wave-height-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.wave-ft-giant {
+  font-family: var(--font-display);
+  font-size: 2.35rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
+  font-variant-numeric: tabular-nums;
+}
+
+.wave-range-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hero-decision-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.confidence-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(15, 30, 55, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+.decision-pill {
+  display: inline-block;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.badge-emerald {
+  background: rgba(16, 185, 129, 0.28);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.5);
+}
+
+.badge-amber {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+}
+
+.badge-crimson {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+}
+
+.badge-purple {
+  background: rgba(168, 85, 247, 0.3);
+  color: #e9d5ff;
+  border: 1px solid rgba(192, 132, 252, 0.55);
+}
+
+.wave-human-scale {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e0f2fe;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+}
+
+.score-orb {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  inline-size: 62px;
+  block-size: 62px;
+  border-radius: 18px;
+  background: rgba(6, 19, 37, 0.78);
+  backdrop-filter: blur(8px);
+  border: 2px solid var(--surf-good);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.score-orb-num {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-orb-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-block-start: 2px;
+}
+
+/* ==========================================================================
+   5. Segmented 3-Tab Navigation
+   ========================================================================== */
+.card-tabs-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 10px 14px 6px;
+  background: rgba(6, 19, 37, 0.45);
+}
+
+.card-tab {
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-subtle);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.card-tab:hover {
+  color: var(--text-primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.card-tab.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--text-primary);
+}
+
+/* Scrollable Tab Container */
+.drawer-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 10px 14px 20px;
+}
+
+.tab-pane {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tab-pane.active {
+  display: flex;
+}
+
+/* Divergence Banner */
+.divergence-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  font-size: 0.75rem;
+  margin-block-end: 10px;
+}
+
+.divergence-icon {
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   6. Tab 1: Dual-Spot Comparative Matrix & Ocean Vitals
+   ========================================================================== */
+
+/* Head-to-Head Verdict Callout Banner */
+#dual-spot-verdict-banner,
+.h2h-verdict-banner {
+  padding: 12px 14px;
+  border-radius: 16px;
+  margin-block-end: 12px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(14, 165, 233, 0.14) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.h2h-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.h2h-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.h2h-standout-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.h2h-verdict-text {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #f1f5f9;
+}
+
+/* Dual-Spot Comparative Matrix */
+.dual-spot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-block-end: 14px;
+}
+
+.dual-spot-card {
+  background: var(--bg-inner-tile);
+  border: 1px solid var(--border-ocean);
+  border-radius: 16px;
+  padding: 12px 11px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  user-select: none;
+}
+
+.dual-spot-card:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dual-spot-card.active-spot {
+  border-color: var(--swell-cyan);
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.32), inset 0 0 10px rgba(56, 189, 248, 0.06);
+}
+
+.dual-spot-card.lead-spot:not(.active-spot) {
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+.spot-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.spot-card-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.spot-card-parish {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-subtle);
+  margin-block-start: 2px;
+}
+
+.spot-card-badge {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-active {
+  background: rgba(56, 189, 248, 0.22);
+  color: var(--swell-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+}
+
+.badge-lead {
+  background: rgba(168, 85, 247, 0.22);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.45);
+}
+
+.badge-dim {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-subtle);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.spot-card-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-block: 4px;
+  border-block: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spot-card-wave-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.spot-card-wave {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.spot-card-range {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.spot-card-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  line-height: 1.15;
+}
+
+.spot-card-score strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.score-denom {
+  font-size: 0.65rem;
+  opacity: 0.75;
+}
+
+.spot-card-decision {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.spot-card-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-block-start: 2px;
+}
+
+.spot-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  gap: 4px;
+}
+
+.card-metric-label {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.card-metric-val {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: end;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ocean-vitals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ocean-vital-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--bg-inner-tile);
+  border: 1px solid var(--border-ocean);
+}
+
+.vital-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.vital-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+}
+
+.vital-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vital-sub {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.regime-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-block-start: 2px;
+  letter-spacing: 0.02em;
+}
+
+.regime-offshore {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.regime-cross {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.regime-onshore {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+/* Golden Window Callout Card */
+#dual-spot-golden-window,
+.golden-callout-card {
+  padding: 13px 14px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.16) 0%, rgba(14, 165, 233, 0.12) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.golden-callout-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 6px;
+}
+
+.golden-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #34d399;
+  letter-spacing: 0.06em;
+}
+
+.golden-title {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.golden-peak-pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.24);
+  color: #6ee7b7;
+  white-space: nowrap;
+}
+
+.golden-verdict-text {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  margin-block-end: 8px;
+}
+
+.golden-mini-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  margin-block-end: 10px;
+}
+
+.btn-preview-window {
+  inline-size: 100%;
+  padding: 7px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(14, 165, 233, 0.2);
+  color: #e0f2fe;
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-preview-window:hover {
+  background: rgba(14, 165, 233, 0.34);
+}
+
+/* Dual Spot Golden Window Timing Grid */
+.golden-spot-timing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-block: 8px 10px;
+}
+
+.golden-spot-col {
+  background: rgba(6, 19, 37, 0.45);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.golden-spot-label {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.golden-spot-time {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-block: 2px 1px;
+}
+
+.golden-spot-metrics {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #34d399;
+  font-weight: 600;
+}
+
+/* Gear & Active Vitals Section Headers */
+#active-spot-gear-card,
+.gear-section,
+.active-vitals-section {
+  margin-block-start: 12px;
+}
+
+.gear-section-header,
+.vitals-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: 6px;
+}
+
+.gear-eyebrow,
+.vitals-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+  letter-spacing: 0.06em;
+}
+
+.gear-active-spot-tag,
+.vitals-active-spot-name {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--swell-cyan);
+}
+
+/* Board & Wetsuit Pair */
+.gear-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gear-pill-card {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--bg-inner-tile);
+  border: 1px solid var(--border-ocean);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gear-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--seafoam);
+  letter-spacing: 0.05em;
+}
+
+.gear-title {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.gear-sub {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+}
+
+/* Progressive Disclosure <details> */
+.coastal-details {
+  border-radius: 16px;
+  background: var(--bg-inner-tile);
+  border: 1px solid var(--border-ocean);
+  padding: 10px 12px;
+  font-size: 0.76rem;
+}
+
+.coastal-details summary {
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.coastal-details-body {
+  margin-block-start: 10px;
+  padding-block-start: 10px;
+  border-block-start: 1px solid var(--border-ocean);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-subtle);
+}
+
+.comparison-paragraph {
+  color: var(--text-primary);
+  background: rgba(56, 189, 248, 0.1);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.details-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.details-meta-grid .full-span {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   7. Tab 2 & Tab 3: Chart & Responsive Source Comparison Table
+   ========================================================================== */
+.chart-card-box {
+  background: var(--bg-inner-tile);
+  border: 1px solid var(--border-ocean);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.chart-header-row,
+.sources-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-block-end: 8px;
+}
+
+.pane-subtitle {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.pane-hint,
+.sources-subtext {
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+  margin-block-end: 8px;
+}
+
+.chart-container {
+  position: relative;
+  block-size: 240px;
+  inline-size: 100%;
+}
+
+.mono-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 35, 62, 0.8);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-ocean);
+}
+
+.table-wrapper {
+  container-type: inline-size;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border-radius: 14px;
+  border: 1px solid var(--border-ocean);
+  background: rgba(6, 16, 31, 0.85);
+}
+
+.table-wrapper:focus-visible {
+  outline: 2px solid var(--swell-cyan);
+  outline-offset: 2px;
+}
+
+.source-comparison-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+  --label-1: "Wave Ht";
+  --label-2: "Period / Dir";
+  --label-3: "Wind";
+  --label-4: "Report";
+  --label-5: "Weight";
+  --label-6: "Status";
+}
+
+.source-comparison-table th,
+.source-comparison-table td {
+  padding: 8px 9px;
+  text-align: start;
+  border-block-end: 1px solid rgba(125, 211, 252, 0.1);
+  vertical-align: middle;
+}
+
+.source-comparison-table thead th {
+  position: sticky;
+  top: 0;
+  inset-block-start: 0;
+  z-index: 2;
+  background: rgba(8, 22, 42, 0.98);
+  backdrop-filter: blur(8px);
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.source-comparison-table tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--bg-table-row-sticky);
+  font-weight: 600;
+  color: var(--text-primary);
+  min-inline-size: 125px;
+}
+
+.source-comparison-table thead th:first-child {
+  inset-inline-start: 0;
+  z-index: 3;
+}
+
+.source-comparison-table .num-col {
+  text-align: end;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.source-type-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-block-start: 2px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--swell-cyan);
+}
+
+.source-type-tag.tag-scraper {
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+}
+
+.source-type-tag.tag-buoy {
+  background: rgba(250, 204, 21, 0.18);
+  color: #fde047;
+}
+
+.source-status-pill {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.status-valid {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+.status-fallback,
+.status-stale {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.status-outlier_rejected {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  text-decoration: line-through;
+}
+
+@container (width < 480px) {
+  .source-comparison-table thead {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .source-comparison-table,
+  .source-comparison-table tbody,
+  .source-comparison-table tr,
+  .source-comparison-table th,
+  .source-comparison-table td {
+    display: block;
+    inline-size: 100%;
+  }
+
+  .source-comparison-table tr {
+    padding: 9px;
+    border-block-end: 1px solid var(--border-ocean);
+  }
+
+  .source-comparison-table tbody th {
+    position: static;
+    background: transparent;
+    padding: 0 0 5px;
+    border-block-end: 1px dashed var(--border-ocean);
+    margin-block-end: 5px;
+  }
+
+  .source-comparison-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    border: none;
+    text-align: end;
+  }
+
+  .source-comparison-table td::before {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    color: var(--text-secondary);
+    text-align: start;
+  }
+
+  .source-comparison-table td:nth-of-type(1)::before { content: var(--label-1); }
+  .source-comparison-table td:nth-of-type(2)::before { content: var(--label-2); }
+  .source-comparison-table td:nth-of-type(3)::before { content: var(--label-3); }
+  .source-comparison-table td:nth-of-type(4)::before { content: var(--label-4); }
+  .source-comparison-table td:nth-of-type(5)::before { content: var(--label-5); }
+  .source-comparison-table td:nth-of-type(6)::before { content: var(--label-6); }
+}
+
+/* ==========================================================================
+   8. Animated Map Wave Crests & Spot Markers (Compositor-Friendly Motion)
+   ========================================================================== */
+.surf-spot-marker-container,
+.buoy-marker-container {
+  background: transparent;
+  border: none;
+  overflow: visible;
+}
+
+.spot-wave-beacon {
+  position: relative;
+  display: block;
+  inline-size: 190px;
+  block-size: 150px;
+  cursor: pointer;
+  pointer-events: none; /* Let drag/click in open clearance pass to map */
+}
+
+/* Elevated Spot Label Pill */
+.spot-pin-pill {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(6, 19, 37, 0.92);
+  backdrop-filter: blur(12px);
+  border: 2px solid var(--surf-good);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  transition: transform 0.18s ease;
+  white-space: nowrap;
+}
+
+.spot-wave-beacon:hover .spot-pin-pill {
+  transform: translateX(-50%) scale(1.06);
+}
+
+/* Vertical Leader Pin Stem */
+.spot-pin-stem {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.5px;
+  height: 60px;
+  background: linear-gradient(to bottom, var(--crest-color, #facc15) 0%, rgba(250, 204, 21, 0.15) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Geographic Spot Anchor Core & Pulsing Radar Dot at [lat, lon] */
+.spot-anchor-core {
+  position: absolute;
+  top: 115px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.spot-anchor-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--crest-color, #facc15);
+  box-shadow: 0 0 12px var(--crest-color, #facc15);
+}
+
+.spot-anchor-ring {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--crest-color, #facc15);
+  opacity: 0.8;
+  animation: beaconPing 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes beaconPing {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* Marching Animated Swell Crests on Map */
+.map-swell-crests {
+  position: absolute;
+  inset: auto;
+  top: 115px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.swell-crest-arc {
+  position: absolute;
+  inline-size: 64px;
+  block-size: 22px;
+  border-block-start: var(--crest-thickness, 3px) solid var(--crest-color, #facc15);
+  border-radius: 50% 50% 0 0;
+  opacity: 0;
+  filter: drop-shadow(0 0 8px var(--crest-color, #facc15));
+  animation: marchWaveCrest var(--crest-duration, 3.2s) cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    opacity: 0.45;
+  }
+}
+
+.swell-crest-arc.arc-2 {
+  animation-delay: calc(var(--crest-duration, 3.2s) * 0.33);
+}
+
+.swell-crest-arc.arc-3 {
+  animation-delay: calc(var(--crest-duration, 3.2s) * 0.66);
+}
+
+@keyframes marchWaveCrest {
+  0% {
+    transform: translateY(28px) scaleX(0.65);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(-24px) scaleX(1.22);
+    opacity: 0;
+  }
+}
+
+.spot-pin-score {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+  min-inline-size: 46px;
+}
+
+.pin-score-lbl {
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 0.92;
+  text-transform: uppercase;
+}
+
+.pin-score-val {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.pin-score-bar {
+  display: block;
+  inline-size: 32px;
+  block-size: 3.5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+  margin-block-start: 2px;
+}
+
+.pin-score-bar > span {
+  display: block;
+  block-size: 100%;
+  border-radius: 999px;
+}
+
+.spot-pin-primary-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   Unified All-in-One Beach Cards (Wave Animation + 0-100 Score Bar + Info)
+   ========================================================================== */
+.panel-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px 6px;
+  background: rgba(6, 19, 37, 0.72);
+  border-block-end: 1px solid var(--border-ocean);
+}
+
+.panel-top-nav .card-tabs-nav {
+  flex: 1;
+  padding: 0;
+  background: transparent;
+}
+
+.panel-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unified-beaches-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spot-pill,
+.spot-pill-name,
+.spot-pill-wave,
+.spot-pill-score {
+  white-space: nowrap;
+}
+
+.beach-unified-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: rgba(8, 22, 42, 0.85);
+  border: 1.5px solid rgba(125, 211, 252, 0.22);
+  box-shadow: 0 10px 26px rgba(2, 8, 20, 0.5);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.beach-unified-card.active-spot {
+  border-color: var(--swell-cyan);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35), 0 12px 28px rgba(2, 8, 20, 0.65);
+}
+
+/* Live Animated Wave Stage Inside Each Beach Card */
+.beach-wave-stage {
+  position: relative;
+  block-size: 106px;
+  inline-size: 100%;
+  overflow: hidden;
+  border-block-end: 1px solid rgba(125, 211, 252, 0.18);
+}
+
+.beach-wave-overlay-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 0;
+  pointer-events: none;
+}
+
+.beach-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.beach-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+  margin: 0;
+}
+
+.beach-wave-overlay-bottom {
+  position: absolute;
+  inset-inline: 12px;
+  inset-block-end: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.beach-wave-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.beach-ft-giant {
+  font-family: var(--font-display);
+  font-size: 1.95rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+.beach-human-scale {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+}
+
+/* Clear 0-100 Surf Score Bar */
+.surf-score-bar-block {
+  padding: 8px 12px 7px;
+  background: rgba(6, 16, 32, 0.85);
+  border-block-end: 1px solid rgba(125, 211, 252, 0.14);
+}
+
+.score-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: 4px;
+}
+
+.score-bar-title {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  color: #bae6fd;
+}
+
+.score-bar-readout {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-bar-readout .score-denom {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.score-bar-track {
+  position: relative;
+  inline-size: 100%;
+  block-size: 9px;
+  border-radius: 999px;
+  background: rgba(15, 35, 62, 0.95);
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  block-size: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%);
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.score-bar-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-block-start: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* Simplified 2x2 Core Info Grid Inside Each Card */
+.beach-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(8, 22, 42, 0.6);
+}
+
+.beach-info-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgba(13, 31, 56, 0.78);
+  border: 1px solid rgba(125, 211, 252, 0.14);
+}
+
+.beach-info-tile .vital-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #7dd3fc;
+}
+
+.beach-info-tile .vital-value {
+  font-family: var(--font-display);
+  font-size: 1.06rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
+}
+
+.beach-info-tile .vital-sub {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  line-height: 1.2;
+}
+
+/* 1-Line Best 48h Window Footer */
+.beach-best-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(15, 35, 62, 0.75);
+  border-block-start: 1px solid rgba(125, 211, 252, 0.14);
+  font-size: 0.76rem;
+}
+
+.best-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  color: #f8fafc;
+}
+
+.best-footer-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.best-footer-meta {
+  color: #bae6fd;
+  font-weight: 600;
+}
+
+.best-footer-board {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  white-space: nowrap;
+}
+
+.spot-pin-meta {
+  display: block;
+  line-height: 1.15;
+}
+
+.spot-pin-title {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.spot-pin-wave-ht {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.15;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  vertical-align: baseline;
+}
+
+.spot-pin-swell-info {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--swell-cyan);
+  line-height: 1.15;
+  margin-inline-start: 6px;
+  vertical-align: baseline;
+}
+
+.spot-pin-sub {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--swell-cyan);
+}
+
+/* Simplified Buoy Pill on Map */
+.buoy-map-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(8, 22, 42, 0.9);
+  border: 1.5px solid var(--sand-gold);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.buoy-pin-dot {
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--sand-gold);
+}
+
+/* Dark Ocean Leaflet Popups */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgba(8, 22, 42, 0.95) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-highlight);
+  border-radius: 16px !important;
+  backdrop-filter: blur(16px);
+}
+
+.leaflet-top.leaflet-left {
+  inset-block-start: 76px;
+  inset-inline-start: 6px;
+}
+
+.leaflet-control-layers {
+  background: rgba(8, 22, 42, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-ocean) !important;
+  border-radius: 12px !important;
+}
+
+/* Modern Basemap Theme Filters (Applied only to tile pane so markers/wave crests stay vibrant) */
+.map-theme-deep-ocean .leaflet-tile-pane {
+  filter: brightness(0.66) contrast(1.28) saturate(1.45) hue-rotate(192deg) invert(0.92);
+}
+
+.map-theme-satellite .leaflet-tile-pane {
+  filter: brightness(0.92) contrast(1.1) saturate(1.18);
+}
+
+.map-theme-daylight-ocean .leaflet-tile-pane {
+  filter: contrast(1.06) saturate(1.15);
+}
+
+.map-theme-natgeo .leaflet-tile-pane {
+  filter: brightness(0.92) contrast(1.08) saturate(1.12);
+}
+
+.map-theme-indigo-radar .leaflet-tile-pane {
+  filter: sepia(0.38) hue-rotate(175deg) saturate(2.4) brightness(0.95) contrast(1.15);
+}
+
+.buoy-popup-card {
+  font-family: var(--font-sans);
+  min-inline-size: 215px;
+}
+
+.buoy-popup-header {
+  border-block-end: 1px solid var(--border-ocean);
+  padding-block-end: 5px;
+  margin-block-end: 7px;
+}
+
+.buoy-popup-id {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--sand-gold);
+  font-weight: 700;
+}
+
+.buoy-popup-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.buoy-popup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  font-size: 0.72rem;
+}
+
+.buoy-popup-stat {
+  background: rgba(15, 35, 62, 0.7);
+  padding: 5px 7px;
+  border-radius: 8px;
+}
+
+.buoy-popup-stat span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-subtle);
+}
+
+.buoy-popup-stat strong {
+  font-family: var(--font-mono);
+  color: var(--swell-cyan);
+}
+
+/* ==========================================================================
+   9. Responsive Tablet & Mobile Layout
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .floating-top-bar {
+    inset-inline-end: 16px;
+    border-radius: 20px;
+    flex-wrap: wrap;
+  }
+
+  .surf-card-panel {
+    inset-block-start: auto;
+    inset-inline-start: 12px;
+    inset-inline-end: 12px;
+    inset-block-end: 12px;
+    inline-size: auto;
+    block-size: 54dvh;
+  }
+
+  .surf-card-panel.card-minimized {
+    block-size: 175px;
+  }
+
+  .btn-mobile-collapse {
+    display: inline-flex;
+  }
+
+  .time-scrubber-dock {
+    inset-block-end: calc(54dvh + 22px);
+    inline-size: calc(100% - 24px);
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-tag {
+    display: none; /* preserve vertical space */
+  }
+
+  .brand-wave-emblem {
+    inline-size: 42px;
+    block-size: 42px;
+  }
+
+  .btn-scrubber-chip.chip-golden {
+    font-size: 0.68rem;
+    padding: 4px 8px;
+  }
+
+  .dual-spot-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .golden-spot-timing-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .ocean-vitals-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .gear-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .wave-tank-stage {
+    block-size: 152px;
+  }
+}
