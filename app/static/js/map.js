@@ -80,7 +80,7 @@ export class SurfMapController {
         format: 'image/png',
         transparent: true,
         version: '1.3.0',
-        opacity: 0.45,
+        opacity: 0.30,
         attribution: 'GEBCO 3D Relief &copy; IHO/IOC UNESCO',
         maxZoom: 14,
       }
@@ -88,12 +88,12 @@ export class SurfMapController {
     // Ocean Floor Base + GEBCO 3D Shaded Relief (natural terrain, contours & rivers)
     const gebco3DGroup = L.layerGroup([oceanFloorBase, gebcoRelief]);
 
-    // Ocean Depth Layer: Deep navy oceanic tint over the Gulf that eliminates the "ice sheet" glare
-    // while preserving subtle underwater bathymetric contours
+    // Ocean Depth Layer: Seamless coastal-to-marsh water harmonization
+    // Toned to match the inland marsh & bayou water luminance while eliminating deep bathymetry glare
     this.oceanDepthLayer = L.geoJSON(GULF_OCEAN_GEOJSON, {
       style: {
-        fillColor: '#07152b',
-        fillOpacity: 0.58,
+        fillColor: '#1e3347',
+        fillOpacity: 0.32,
         stroke: false,
         fillRule: 'evenodd',
       },
