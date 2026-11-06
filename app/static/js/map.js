@@ -64,13 +64,35 @@ export class SurfMapController {
         maxZoom: 13,
       }
     );
-    const oceanFloorRef = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
-      {
-        maxZoom: 13,
-      }
-    );
-    const gebco3DGroup = L.layerGroup([oceanFloorBase, oceanFloorRef]);
+    // Removed reference boundary layer to eliminate black administrative/township grid lines
+    const gebco3DGroup = L.layerGroup([oceanFloorBase]);
+
+    // Dedicated Land Styling Pane (z-index 220, between base tiles and markers)
+    this.map.createPane('landMaskPane');
+    const landPane = this.map.getPane('landMaskPane');
+    if (landPane) {
+      landPane.style.zIndex = '220';
+      landPane.style.pointerEvents = 'none';
+    }
+
+    this.landMaskLayer = null;
+    fetch('/static/data/gulf_states.geojson')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((geo) => {
+        if (!geo || !this.map) return;
+        this.landMaskLayer = L.geoJSON(geo, {
+          pane: 'landMaskPane',
+          style: {
+            fillColor: '#062612',
+            fillOpacity: 0.90,
+            stroke: false,
+          },
+        });
+        if (this.basemapPresets[this.activeBasemapIndex]?.key === '3d_relief') {
+          this.landMaskLayer.addTo(this.map);
+        }
+      })
+      .catch((err) => console.warn('Could not load land mask:', err));
 
     // 2. Coastal Satellite Hybrid (High-Res Aerial + Place Labels)
     const esriSatBase = L.tileLayer(
@@ -125,6 +147,19 @@ export class SurfMapController {
     const next = this.basemapPresets[this.activeBasemapIndex];
     next.group.addTo(this.map);
     this._applyBasemapThemeClass(next.themeClass);
+
+    if (this.landMaskLayer) {
+      if (next.key === '3d_relief') {
+        if (!this.map.hasLayer(this.landMaskLayer)) {
+          this.landMaskLayer.addTo(this.map);
+        }
+      } else {
+        if (this.map.hasLayer(this.landMaskLayer)) {
+          this.map.removeLayer(this.landMaskLayer);
+        }
+      }
+    }
+
     return next.label;
   }
 
