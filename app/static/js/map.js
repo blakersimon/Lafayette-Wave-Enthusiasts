@@ -65,56 +65,23 @@ export class SurfMapController {
 
     L.control.zoom({ position: 'topleft' }).addTo(this.map);
 
-    // 1. GEBCO 3D Ocean Floor Topography & Shaded Relief (Primary Default Basemap)
-    const oceanFloorBase = L.tileLayer(
+    // 1. Option 1: Deep Ocean Bathymetry (Night Glow — Primary Default Basemap)
+    const deepOceanBase = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
       {
-        attribution: 'Tiles &copy; Esri &mdash; GEBCO, NOAA',
+        attribution: 'Tiles &copy; Esri &mdash; GEBCO, NOAA, Garmin',
         maxZoom: 13,
       }
     );
-    const gebcoRelief = L.tileLayer.wms(
-      'https://wms.gebco.net/mapserv?',
+    const deepOceanRef = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
       {
-        layers: 'GEBCO_LATEST',
-        format: 'image/png',
-        transparent: true,
-        version: '1.3.0',
-        opacity: 0.30,
-        attribution: 'GEBCO 3D Relief &copy; IHO/IOC UNESCO',
-        maxZoom: 14,
+        maxZoom: 13,
       }
     );
-    // Ocean Floor Base + GEBCO 3D Shaded Relief (natural terrain, contours & rivers)
-    const gebco3DGroup = L.layerGroup([oceanFloorBase, gebcoRelief]);
+    const deepOceanGroup = L.layerGroup([deepOceanBase, deepOceanRef]);
 
-    // Ocean Depth Layer: Seamless coastal-to-marsh water harmonization
-    // Toned to match the inland marsh & bayou water luminance while eliminating deep bathymetry glare
-    this.oceanDepthLayer = L.geoJSON(GULF_OCEAN_GEOJSON, {
-      style: {
-        fillColor: '#1e3347',
-        fillOpacity: 0.32,
-        stroke: false,
-        fillRule: 'evenodd',
-      },
-    });
-    this.oceanDepthLayer.addTo(this.map);
-
-    // State Boundary Polygons as thick dark grey lines (no solid fill, preserves natural terrain, relief & rivers)
-    this.landMaskLayer = L.geoJSON(GULF_STATES_GEOJSON, {
-      style: {
-        fill: false,
-        stroke: true,
-        color: '#334155',
-        weight: 2.2,
-        opacity: 0.88,
-        lineJoin: 'round',
-        lineCap: 'round',
-      },
-    });
-    this.landMaskLayer.addTo(this.map);
-
-    // 2. Coastal Satellite Hybrid (High-Res Aerial + Place Labels)
+    // 2. Option 2: Coastal Satellite Hybrid (High-Res Aerial + Place Labels)
     const esriSatBase = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
@@ -131,14 +98,22 @@ export class SurfMapController {
     const esriSatGroup = L.layerGroup([esriSatBase, esriSatRef]);
 
     this.basemapPresets = [
-      { key: '3d_relief', label: '3D Relief', fullName: 'GEBCO 3D Ocean Relief', group: gebco3DGroup, themeClass: 'map-theme-3d-relief' },
+      { key: 'deep_ocean', label: 'Deep Ocean', fullName: 'Deep Ocean Bathymetry (Night Glow)', group: deepOceanGroup, themeClass: 'map-theme-deep-ocean' },
       { key: 'satellite', label: 'Satellite', fullName: 'Coastal Satellite Hybrid', group: esriSatGroup, themeClass: 'map-theme-satellite' },
     ];
-    this.activeBasemapIndex = 0;
 
-    // Default to GEBCO 3D Ocean Relief
-    gebco3DGroup.addTo(this.map);
-    this._applyBasemapThemeClass('map-theme-3d-relief');
+    const basemapParam = (urlParams.get('basemap') || '').toLowerCase();
+    this.activeBasemapIndex = (basemapParam === 'satellite' || basemapParam === '1') ? 1 : 0;
+
+    // Load initial preset (Default: Option 1 Deep Ocean Bathymetry)
+    const initialPreset = this.basemapPresets[this.activeBasemapIndex];
+    initialPreset.group.addTo(this.map);
+    this._applyBasemapThemeClass(initialPreset.themeClass);
+
+    const toggleLabel = document.getElementById('basemap-toggle-label');
+    if (toggleLabel) {
+      toggleLabel.textContent = initialPreset.label;
+    }
   }
 
   _applyBasemapThemeClass(themeClass) {
@@ -158,7 +133,7 @@ export class SurfMapController {
   }
 
   toggleBasemap() {
-    if (!this.map || !this.basemapPresets?.length) return '3D Relief';
+    if (!this.map || !this.basemapPresets?.length) return 'Deep Ocean';
     const current = this.basemapPresets[this.activeBasemapIndex];
     if (current && this.map.hasLayer(current.group)) {
       this.map.removeLayer(current.group);
@@ -167,31 +142,6 @@ export class SurfMapController {
     const next = this.basemapPresets[this.activeBasemapIndex];
     next.group.addTo(this.map);
     this._applyBasemapThemeClass(next.themeClass);
-
-    if (this.oceanDepthLayer) {
-      if (next.key === '3d_relief') {
-        if (!this.map.hasLayer(this.oceanDepthLayer)) {
-          this.oceanDepthLayer.addTo(this.map);
-        }
-      } else {
-        if (this.map.hasLayer(this.oceanDepthLayer)) {
-          this.map.removeLayer(this.oceanDepthLayer);
-        }
-      }
-    }
-
-    if (this.landMaskLayer) {
-      if (next.key === '3d_relief') {
-        if (!this.map.hasLayer(this.landMaskLayer)) {
-          this.landMaskLayer.addTo(this.map);
-        }
-      } else {
-        if (this.map.hasLayer(this.landMaskLayer)) {
-          this.map.removeLayer(this.landMaskLayer);
-        }
-      }
-    }
-
     return next.label;
   }
 

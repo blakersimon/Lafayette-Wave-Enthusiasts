@@ -182,18 +182,39 @@ def test_api_serves_updated_assets():
         assert "GULF_STATES_GEOJSON" in resp_gulf.text
 
 
-def test_gulf_states_and_boundary_styling():
+def test_basemap_presets_and_toggle_configuration():
     js_path = PROJECT_ROOT / "app" / "static" / "js" / "map.js"
     assert js_path.exists()
     code = js_path.read_text(encoding="utf-8")
 
-    # Natural shaded relief land mass with thick dark grey state boundary lines (no solid flat fill)
-    assert "GULF_STATES_GEOJSON" in code
-    assert "GULF_OCEAN_GEOJSON" in code
-    assert "oceanDepthLayer" in code
-    assert "fillColor: '#1e3347'" in code
-    assert "fill: false" in code
-    assert "stroke: true" in code
-    assert "color: '#334155'" in code
-    assert "weight: 2.2" in code
+    # Option 1: Deep Ocean Bathymetry (Night Glow) as default
+    assert "deepOceanBase" in code
+    assert "World_Ocean_Base" in code
+    assert "deepOceanRef" in code
+    assert "World_Ocean_Reference" in code
+    assert "deep_ocean" in code
+    assert "map-theme-deep-ocean" in code
+
+    # Option 2: Coastal Satellite Hybrid as toggle
+    assert "esriSatBase" in code
+    assert "World_Imagery" in code
+    assert "esriSatRef" in code
+    assert "World_Boundaries_and_Places" in code
+    assert "satellite" in code
+    assert "map-theme-satellite" in code
+
+    # Map settings
     assert "zoomSnap: 1" in code
+    assert "this.activeBasemapIndex = 0" in code
+
+    # HTML template toggle button has Deep Ocean default label
+    html_path = PROJECT_ROOT / "app" / "templates" / "index.html"
+    html = html_path.read_text(encoding="utf-8")
+    assert 'id="btn-toggle-basemap"' in html
+    assert 'id="basemap-toggle-label">Deep Ocean<' in html
+
+    # Stylesheet has deep-ocean and satellite filters
+    css_path = PROJECT_ROOT / "app" / "static" / "css" / "styles.css"
+    css = css_path.read_text(encoding="utf-8")
+    assert ".map-theme-deep-ocean .leaflet-tile-pane" in css
+    assert ".map-theme-satellite .leaflet-tile-pane" in css

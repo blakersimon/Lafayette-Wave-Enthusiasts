@@ -122,6 +122,10 @@ canvas {
   z-index: 1;
 }
 
+.surf-map-canvas.map-theme-deep-ocean {
+  background: #071526;
+}
+
 .surf-map-canvas.map-theme-satellite {
   background: #061527;
 }
@@ -2179,26 +2183,17 @@ canvas {
   filter: brightness(0.72) contrast(1.52) saturate(1.55) hue-rotate(212deg) invert(0.96);
 }
 
-.map-theme-3d-relief .leaflet-tile,
-.map-theme-satellite .leaflet-tile {
+.map-theme-deep-ocean .leaflet-tile,
+.map-theme-satellite .leaflet-tile,
+.map-theme-3d-relief .leaflet-tile {
   border: none !important;
   outline: 1px solid transparent !important;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
-/* Dedicated Land Styling: Deep dark forest green land with subtle shoreline depth */
-.leaflet-landMask-pane {
-  z-index: 450 !important;
-  pointer-events: none;
-}
-
-.leaflet-landMask-pane path {
-  filter: drop-shadow(0 0 3px rgba(2, 6, 23, 0.45));
-}
-
 .map-theme-satellite .leaflet-tile-pane {
-  filter: brightness(0.92) contrast(1.1) saturate(1.18);
+  filter: brightness(0.95) contrast(1.08) saturate(1.15);
 }
 
 .map-theme-deep-ocean .leaflet-tile-pane {
