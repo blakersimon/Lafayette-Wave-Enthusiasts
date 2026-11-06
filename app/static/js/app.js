@@ -6,10 +6,10 @@
  * and Unified Surf Cards.
  */
 
-import { SurfMapController } from './map.js?v=16';
-import { ForecastChartController } from './chart.js?v=16';
-import { SpotDrawerController } from './drawer.js?v=16';
-import { WaveTankAnimator } from './wave_animator.js?v=16';
+import { SurfMapController } from './map.js?v=17';
+import { ForecastChartController } from './chart.js?v=17';
+import { SpotDrawerController } from './drawer.js?v=17';
+import { WaveTankAnimator } from './wave_animator.js?v=17';
 
 const COLOR_HEX = {
   purple: '#a855f7',

@@ -187,11 +187,10 @@ def test_gulf_states_and_boundary_styling():
     assert js_path.exists()
     code = js_path.read_text(encoding="utf-8")
 
-    # Dark green land mass styling with thick dark grey state boundary lines
+    # Natural shaded relief land mass with thick dark grey state boundary lines (no solid flat fill)
     assert "GULF_STATES_GEOJSON" in code
-    assert "fillColor: '#032612'" in code
-    assert "fillOpacity: 1.0" in code
+    assert "fill: false" in code
     assert "stroke: true" in code
-    assert "color: '#475569'" in code
-    assert "weight: 2.5" in code
+    assert "color: '#334155'" in code
+    assert "weight: 2.2" in code
     assert "zoomSnap: 1" in code

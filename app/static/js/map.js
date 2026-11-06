@@ -73,18 +73,29 @@ export class SurfMapController {
         maxZoom: 13,
       }
     );
-    // Removed reference boundary layer to eliminate black administrative/township grid lines
-    const gebco3DGroup = L.layerGroup([oceanFloorBase]);
+    const gebcoRelief = L.tileLayer.wms(
+      'https://wms.gebco.net/mapserv?',
+      {
+        layers: 'GEBCO_LATEST',
+        format: 'image/png',
+        transparent: true,
+        version: '1.3.0',
+        opacity: 0.70,
+        attribution: 'GEBCO 3D Relief &copy; IHO/IOC UNESCO',
+        maxZoom: 14,
+      }
+    );
+    // Ocean Floor Base + GEBCO 3D Shaded Relief (natural terrain, contours & rivers)
+    const gebco3DGroup = L.layerGroup([oceanFloorBase, gebcoRelief]);
 
-    // Synchronous Gulf States Land Mask & State Boundaries (LA, TX, MS, AL, FL, AR)
+    // State Boundary Polygons as thick dark grey lines (no solid fill, preserves natural terrain, relief & rivers)
     this.landMaskLayer = L.geoJSON(GULF_STATES_GEOJSON, {
       style: {
-        fillColor: '#032612',
-        fillOpacity: 1.0,
+        fill: false,
         stroke: true,
-        color: '#475569',
-        weight: 2.5,
-        opacity: 0.95,
+        color: '#334155',
+        weight: 2.2,
+        opacity: 0.88,
         lineJoin: 'round',
         lineCap: 'round',
       },

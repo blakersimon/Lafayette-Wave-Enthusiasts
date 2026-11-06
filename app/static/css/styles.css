@@ -2174,9 +2174,9 @@ canvas {
 }
 
 /* Modern Basemap Theme Filters (Applied only to tile pane so markers/wave crests stay vibrant) */
-/* GEBCO 3D Ocean Relief Basemap Theme: Dark velvet land silhouette with glowing oceanic relief */
+/* GEBCO 3D Ocean Relief Basemap Theme: Natural green shaded relief terrain with glowing oceanic bathymetry */
 .map-theme-3d-relief .leaflet-tile-pane {
-  filter: brightness(0.66) contrast(1.36) saturate(1.50) hue-rotate(192deg) invert(0.92);
+  filter: brightness(0.72) contrast(1.52) saturate(1.55) hue-rotate(212deg) invert(0.96);
 }
 
 .map-theme-3d-relief .leaflet-tile,
