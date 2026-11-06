@@ -189,6 +189,9 @@ def test_gulf_states_and_boundary_styling():
 
     # Natural shaded relief land mass with thick dark grey state boundary lines (no solid flat fill)
     assert "GULF_STATES_GEOJSON" in code
+    assert "GULF_OCEAN_GEOJSON" in code
+    assert "oceanDepthLayer" in code
+    assert "fillColor: '#07152b'" in code
     assert "fill: false" in code
     assert "stroke: true" in code
     assert "color: '#334155'" in code

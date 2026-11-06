@@ -6,7 +6,7 @@
  * and Unified Surf Cards.
  */
 
-import { SurfMapController } from './map.js?v=17';
+import { SurfMapController } from './map.js?v=18';
 import { ForecastChartController } from './chart.js?v=17';
 import { SpotDrawerController } from './drawer.js?v=17';
 import { WaveTankAnimator } from './wave_animator.js?v=17';

@@ -8,7 +8,7 @@
  * and direction respond to live and 48h-scrubbed wave height & period predictions.
  */
 
-import { GULF_STATES_GEOJSON } from './gulf_states.js?v=16';
+import { GULF_STATES_GEOJSON, GULF_OCEAN_GEOJSON } from './gulf_states.js?v=18';
 
 const LA_COAST_CENTER = [29.58, -90.50];
 const DEFAULT_ZOOM = 8.0;
@@ -80,13 +80,25 @@ export class SurfMapController {
         format: 'image/png',
         transparent: true,
         version: '1.3.0',
-        opacity: 0.70,
+        opacity: 0.45,
         attribution: 'GEBCO 3D Relief &copy; IHO/IOC UNESCO',
         maxZoom: 14,
       }
     );
     // Ocean Floor Base + GEBCO 3D Shaded Relief (natural terrain, contours & rivers)
     const gebco3DGroup = L.layerGroup([oceanFloorBase, gebcoRelief]);
+
+    // Ocean Depth Layer: Deep navy oceanic tint over the Gulf that eliminates the "ice sheet" glare
+    // while preserving subtle underwater bathymetric contours
+    this.oceanDepthLayer = L.geoJSON(GULF_OCEAN_GEOJSON, {
+      style: {
+        fillColor: '#07152b',
+        fillOpacity: 0.58,
+        stroke: false,
+        fillRule: 'evenodd',
+      },
+    });
+    this.oceanDepthLayer.addTo(this.map);
 
     // State Boundary Polygons as thick dark grey lines (no solid fill, preserves natural terrain, relief & rivers)
     this.landMaskLayer = L.geoJSON(GULF_STATES_GEOJSON, {
@@ -155,6 +167,18 @@ export class SurfMapController {
     const next = this.basemapPresets[this.activeBasemapIndex];
     next.group.addTo(this.map);
     this._applyBasemapThemeClass(next.themeClass);
+
+    if (this.oceanDepthLayer) {
+      if (next.key === '3d_relief') {
+        if (!this.map.hasLayer(this.oceanDepthLayer)) {
+          this.oceanDepthLayer.addTo(this.map);
+        }
+      } else {
+        if (this.map.hasLayer(this.oceanDepthLayer)) {
+          this.map.removeLayer(this.oceanDepthLayer);
+        }
+      }
+    }
 
     if (this.landMaskLayer) {
       if (next.key === '3d_relief') {
