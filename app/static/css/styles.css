@@ -118,8 +118,12 @@ canvas {
   inset: 0;
   block-size: 100%;
   inline-size: 100%;
-  background: #061527;
+  background: #365e7d;
   z-index: 1;
+}
+
+.surf-map-canvas.map-theme-satellite {
+  background: #061527;
 }
 
 /* ==========================================================================
@@ -2178,7 +2182,19 @@ canvas {
 .map-theme-3d-relief .leaflet-tile,
 .map-theme-satellite .leaflet-tile {
   border: none !important;
-  outline: none !important;
+  outline: 1px solid transparent !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Dedicated Land Styling: Deep dark forest green land with subtle shoreline depth */
+.leaflet-landMask-pane {
+  z-index: 450 !important;
+  pointer-events: none;
+}
+
+.leaflet-landMask-pane path {
+  filter: drop-shadow(0 0 3px rgba(2, 6, 23, 0.45));
 }
 
 .map-theme-satellite .leaflet-tile-pane {

@@ -8,6 +8,8 @@
  * and direction respond to live and 48h-scrubbed wave height & period predictions.
  */
 
+import { GULF_STATES_GEOJSON } from './gulf_states.js?v=16';
+
 const LA_COAST_CENTER = [29.58, -90.50];
 const DEFAULT_ZOOM = 8.0;
 
@@ -44,11 +46,18 @@ export class SurfMapController {
       return;
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const zoomParam = parseFloat(urlParams.get('zoom'));
+    const initialZoom = !isNaN(zoomParam) ? zoomParam : DEFAULT_ZOOM;
+    const latParam = parseFloat(urlParams.get('lat'));
+    const lonParam = parseFloat(urlParams.get('lon'));
+    const initialCenter = (!isNaN(latParam) && !isNaN(lonParam)) ? [latParam, lonParam] : LA_COAST_CENTER;
+
     this.map = L.map(this.mapElementId, {
-      center: LA_COAST_CENTER,
-      zoom: DEFAULT_ZOOM,
-      zoomSnap: 0.1,
-      zoomDelta: 0.5,
+      center: initialCenter,
+      zoom: initialZoom,
+      zoomSnap: 1,
+      zoomDelta: 1,
       minZoom: 5,
       maxZoom: 16,
       zoomControl: false,
@@ -67,32 +76,20 @@ export class SurfMapController {
     // Removed reference boundary layer to eliminate black administrative/township grid lines
     const gebco3DGroup = L.layerGroup([oceanFloorBase]);
 
-    // Dedicated Land Styling Pane (z-index 220, between base tiles and markers)
-    this.map.createPane('landMaskPane');
-    const landPane = this.map.getPane('landMaskPane');
-    if (landPane) {
-      landPane.style.zIndex = '220';
-      landPane.style.pointerEvents = 'none';
-    }
-
-    this.landMaskLayer = null;
-    fetch('/static/data/gulf_states.geojson')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((geo) => {
-        if (!geo || !this.map) return;
-        this.landMaskLayer = L.geoJSON(geo, {
-          pane: 'landMaskPane',
-          style: {
-            fillColor: '#062612',
-            fillOpacity: 0.90,
-            stroke: false,
-          },
-        });
-        if (this.basemapPresets[this.activeBasemapIndex]?.key === '3d_relief') {
-          this.landMaskLayer.addTo(this.map);
-        }
-      })
-      .catch((err) => console.warn('Could not load land mask:', err));
+    // Synchronous Gulf States Land Mask & State Boundaries (LA, TX, MS, AL, FL, AR)
+    this.landMaskLayer = L.geoJSON(GULF_STATES_GEOJSON, {
+      style: {
+        fillColor: '#032612',
+        fillOpacity: 1.0,
+        stroke: true,
+        color: '#475569',
+        weight: 2.5,
+        opacity: 0.95,
+        lineJoin: 'round',
+        lineCap: 'round',
+      },
+    });
+    this.landMaskLayer.addTo(this.map);
 
     // 2. Coastal Satellite Hybrid (High-Res Aerial + Place Labels)
     const esriSatBase = L.tileLayer(

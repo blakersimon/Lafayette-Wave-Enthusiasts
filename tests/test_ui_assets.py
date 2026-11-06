@@ -175,3 +175,23 @@ def test_api_serves_updated_assets():
         assert resp_index.status_code == 200
         assert "vital-water-notes" in resp_index.text
         assert "hero-confidence-pill" in resp_index.text
+
+        # 5. Gulf States JS module
+        resp_gulf = client.get("/static/js/gulf_states.js")
+        assert resp_gulf.status_code == 200
+        assert "GULF_STATES_GEOJSON" in resp_gulf.text
+
+
+def test_gulf_states_and_boundary_styling():
+    js_path = PROJECT_ROOT / "app" / "static" / "js" / "map.js"
+    assert js_path.exists()
+    code = js_path.read_text(encoding="utf-8")
+
+    # Dark green land mass styling with thick dark grey state boundary lines
+    assert "GULF_STATES_GEOJSON" in code
+    assert "fillColor: '#032612'" in code
+    assert "fillOpacity: 1.0" in code
+    assert "stroke: true" in code
+    assert "color: '#475569'" in code
+    assert "weight: 2.5" in code
+    assert "zoomSnap: 1" in code
