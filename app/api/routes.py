@@ -166,10 +166,11 @@ async def compute_live_spot_detail(spot_id: str) -> SpotDetail:
 
     station_task = buoy_svc.fetch_station_pair(spot_id)
     weather_task = weather_svc.fetch_spot_weather(spot_id)
+    hourly_task = weather_svc.fetch_open_meteo_hourly(spot_id)
     scraper_task = scraper_svc.fetch_all_scrapers(spot_id)
 
-    station_res, weather_res, scraper_res = await asyncio.gather(
-        station_task, weather_task, scraper_task, return_exceptions=True
+    station_res, weather_res, hourly_res, scraper_res = await asyncio.gather(
+        station_task, weather_task, hourly_task, scraper_task, return_exceptions=True
     )
 
     readings: List[NormalizedMarineReading] = []
@@ -208,9 +209,14 @@ async def compute_live_spot_detail(spot_id: str) -> SpotDetail:
         if fallback_spot:
             return _hydrate_spot_detail(fallback_spot)
 
+    tide_predictions = station_res.get("tide_predictions", []) if isinstance(station_res, dict) else []
+    hourly_weather = hourly_res if isinstance(hourly_res, list) and hourly_res else None
+
     consensus: ConsensusForecast = consensus_eng.generate_spot_consensus(
         spot_id=spot_id,
         readings=readings,
+        hourly_weather=hourly_weather,
+        tide_predictions=tide_predictions,
     )
 
     spot_detail = SpotDetail(

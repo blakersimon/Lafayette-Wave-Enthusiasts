@@ -117,6 +117,7 @@ export class SpotDrawerController {
     this.allSpots = [];
     this.comparison = null;
     this.activeSpotId = 'holly_beach';
+    this.lastSpotId = null;
   }
 
   setApp(app) {
@@ -186,14 +187,21 @@ export class SpotDrawerController {
       );
     }
 
-    // Only re-render chart & source matrix when spot changes (not on every slider drag)
-    if (scrubbedHourIndex === null) {
+    const spotChanged = this.lastSpotId !== this.activeSpotId;
+    this.lastSpotId = this.activeSpotId;
+
+    if (spotChanged || scrubbedHourIndex === null) {
       if (this.chartController) {
         this.chartController.render(timeline);
+        if (scrubbedHourIndex !== null) {
+          this.chartController.setScrubbedHour(scrubbedHourIndex);
+        }
       }
       const sources = currentSpot.source_breakdown || cons.source_breakdown || [];
       setText('tab-source-count', String(sources.length));
       this.renderSourceMatrix(sources);
+    } else if (this.chartController) {
+      this.chartController.setScrubbedHour(scrubbedHourIndex);
     }
   }
 

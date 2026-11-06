@@ -103,6 +103,16 @@ class LouisianaSurfApp {
         document.querySelectorAll('.tab-pane').forEach((pane) => {
           pane.classList.toggle('active', pane.id === `tab-${targetTab}`);
         });
+
+        if (targetTab === 'timeline') {
+          const activeSpot = this.spots.find((s) => s.spot_id === this.activeSpotId) || this.spots[0];
+          const timeline = activeSpot?.consensus?.timeline_48h || [];
+          this.chartController.render(timeline);
+          if (this.scrubbedHourIndex !== null) {
+            this.chartController.setScrubbedHour(this.scrubbedHourIndex);
+          }
+          this.chartController.resize();
+        }
       });
     });
 
@@ -175,45 +185,17 @@ class LouisianaSurfApp {
     const btnPreviewGolden = document.getElementById('btn-preview-golden-wave');
     if (btnPreviewGolden) btnPreviewGolden.addEventListener('click', jumpToGolden);
 
-    // LA Coast full-view button
-    const btnCoast = document.getElementById('btn-view-coast');
-    if (btnCoast) {
-      btnCoast.addEventListener('click', () => {
-        this.mapController.resetCoastView();
-      });
-    }
-
-    // 1-Click Basemap Style Switcher
-    const btnCycleMap = document.getElementById('btn-cycle-basemap');
-    if (btnCycleMap) {
-      btnCycleMap.addEventListener('click', () => {
-        const nextLabel = this.mapController.cycleBasemap();
-        btnCycleMap.textContent = nextLabel;
-      });
-    }
-
-    // 1-Click Bathymetry & Seafloor Overlays Switcher (Both, Contours, 3D Relief, OFF)
-    const btnBathy = document.getElementById('btn-toggle-bathy');
-    if (btnBathy) {
-      btnBathy.addEventListener('click', () => {
-        this.mapController.cycleBathy();
-      });
-    }
-
-    // Buoy toggle button
-    const btnBuoys = document.getElementById('btn-toggle-vectors');
-    if (btnBuoys) {
-      btnBuoys.addEventListener('click', () => {
-        const shown = this.mapController.toggleBuoys(this.buoys, this.spots);
-        btnBuoys.textContent = `Buoys: ${shown ? 'ON' : 'OFF'}`;
-      });
-    }
-
-    // Refresh button
-    const btnRefresh = document.getElementById('btn-refresh');
-    if (btnRefresh) {
-      btnRefresh.addEventListener('click', async () => {
-        await this.refreshTelemetry();
+    // Single Basemap Switcher (Toggles between 3D Relief and Satellite)
+    const btnToggleBasemap = document.getElementById('btn-toggle-basemap');
+    const labelToggleBasemap = document.getElementById('basemap-toggle-label');
+    if (btnToggleBasemap) {
+      btnToggleBasemap.addEventListener('click', () => {
+        const nextLabel = this.mapController.toggleBasemap();
+        if (labelToggleBasemap) {
+          labelToggleBasemap.textContent = nextLabel;
+        } else {
+          btnToggleBasemap.textContent = nextLabel;
+        }
       });
     }
 

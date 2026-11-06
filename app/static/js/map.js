@@ -34,15 +34,8 @@ export class SurfMapController {
     this.buoyMarkers = new Map();
     this.shoalingLines = [];
     this.showBuoys = true;
-    this.noaaContoursLayer = null;
-    this.gebcoReliefLayer = null;
-    this.bathyModeIndex = 0; // 0: Both, 1: Contours, 2: 3D Relief, 3: OFF
-    this.bathyModes = [
-      { key: 'both', label: 'Both', contours: true, relief: true },
-      { key: 'contours', label: 'Contours', contours: true, relief: false },
-      { key: 'relief', label: '3D Relief', contours: false, relief: true },
-      { key: 'off', label: 'OFF', contours: false, relief: false },
-    ];
+    this.basemapPresets = [];
+    this.activeBasemapIndex = 0;
   }
 
   init() {
@@ -63,21 +56,33 @@ export class SurfMapController {
 
     L.control.zoom({ position: 'topleft' }).addTo(this.map);
 
-    // 1. Deep Ocean Bathymetry (Night Glow — New Default! Shows Gulf shelf contours in rich navy/teal)
-    const deepOceanBase = L.tileLayer(
+    // 1. GEBCO 3D Ocean Floor Topography & Shaded Relief (Primary Default Basemap)
+    const oceanFloorBase = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
       {
-        attribution: 'Tiles &copy; Esri &mdash; GEBCO, NOAA, National Geographic',
+        attribution: 'Tiles &copy; Esri &mdash; GEBCO, NOAA',
         maxZoom: 13,
       }
     );
-    const deepOceanRef = L.tileLayer(
+    const oceanFloorRef = L.tileLayer(
       'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
       {
         maxZoom: 13,
       }
     );
-    const deepOceanGroup = L.layerGroup([deepOceanBase, deepOceanRef]);
+    const gebcoRelief = L.tileLayer.wms(
+      'https://wms.gebco.net/mapserv?',
+      {
+        layers: 'GEBCO_LATEST',
+        format: 'image/png',
+        transparent: true,
+        version: '1.3.0',
+        opacity: 0.70,
+        attribution: 'GEBCO 3D Relief &copy; IHO/IOC UNESCO',
+        maxZoom: 14,
+      }
+    );
+    const gebco3DGroup = L.layerGroup([oceanFloorBase, gebcoRelief, oceanFloorRef]);
 
     // 2. Coastal Satellite Hybrid (High-Res Aerial + Place Labels)
     const esriSatBase = L.tileLayer(
@@ -95,141 +100,24 @@ export class SurfMapController {
     );
     const esriSatGroup = L.layerGroup([esriSatBase, esriSatRef]);
 
-    // 3. Daylight Ocean Shelf (Bright Turquoise NOAA/GEBCO Bathymetry)
-    const daylightOceanBase = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: 'Tiles &copy; Esri &mdash; GEBCO, NOAA, National Geographic',
-        maxZoom: 13,
-      }
-    );
-    const daylightOceanRef = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}',
-      {
-        maxZoom: 13,
-      }
-    );
-    const esriOceanGroup = L.layerGroup([daylightOceanBase, daylightOceanRef]);
-
-    // 4. National Geographic Coastal Atlas
-    const natGeoLayer = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: 'Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ',
-        maxZoom: 16,
-      }
-    );
-
-    // 5. Midnight Indigo Radar (Tinted Dark Marine Radar)
-    const esriDarkBase = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
-        maxZoom: 16,
-      }
-    );
-    const esriDarkRef = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-      {
-        maxZoom: 16,
-        opacity: 0.85,
-      }
-    );
-    const esriDarkGroup = L.layerGroup([esriDarkBase, esriDarkRef]);
-
     this.basemapPresets = [
-      { key: 'deep_ocean', label: 'Deep Ocean', fullName: 'Deep Ocean Bathymetry (Night Glow)', group: deepOceanGroup, themeClass: 'map-theme-deep-ocean' },
-      { key: 'satellite', label: 'Satellite', fullName: 'Coastal Satellite Hybrid (Esri)', group: esriSatGroup, themeClass: 'map-theme-satellite' },
-      { key: 'daylight_ocean', label: 'Daylight Ocean', fullName: 'Ocean Shelf Bathymetry (Daylight)', group: esriOceanGroup, themeClass: 'map-theme-daylight-ocean' },
-      { key: 'natgeo', label: 'NatGeo Atlas', fullName: 'National Geographic Coastal Atlas', group: natGeoLayer, themeClass: 'map-theme-natgeo' },
-      { key: 'indigo_radar', label: 'Indigo Radar', fullName: 'Midnight Indigo Radar (Esri)', group: esriDarkGroup, themeClass: 'map-theme-indigo-radar' },
+      { key: '3d_relief', label: '3D Relief', fullName: 'GEBCO 3D Ocean Relief', group: gebco3DGroup, themeClass: 'map-theme-3d-relief' },
+      { key: 'satellite', label: 'Satellite', fullName: 'Coastal Satellite Hybrid', group: esriSatGroup, themeClass: 'map-theme-satellite' },
     ];
     this.activeBasemapIndex = 0;
 
-    // Default to Deep Ocean Bathymetry (Night Glow)
-    deepOceanGroup.addTo(this.map);
-    this._applyBasemapThemeClass('map-theme-deep-ocean');
-
-    // Create dedicated panes for bathymetric relief and depth contours
-    // so they render crisply between base tiles and markers without inheriting base tile filters.
-    if (!this.map.getPane('bathyPane')) {
-      const bathyPane = this.map.createPane('bathyPane');
-      bathyPane.style.zIndex = '220';
-    }
-    if (!this.map.getPane('contoursPane')) {
-      const contoursPane = this.map.createPane('contoursPane');
-      contoursPane.style.zIndex = '230';
-    }
-
-    // Layer A: NOAA ENC Nautical Depth Contours & Soundings (Official NOAA Office of Coast Survey)
-    this.noaaContoursLayer = L.tileLayer.wms(
-      'https://gis.charttools.noaa.gov/arcgis/rest/services/MCS/ENCOnline/MapServer/exts/MaritimeChartService/WMSServer',
-      {
-        layers: '2',
-        format: 'image/png',
-        transparent: true,
-        version: '1.3.0',
-        pane: 'contoursPane',
-        opacity: 0.88,
-        attribution: 'NOAA Office of Coast Survey &mdash; Depth Contours',
-        maxZoom: 16,
-      }
-    );
-
-    // Layer B: GEBCO 3D Ocean Floor Topography & Shaded Relief (IHO / UNESCO)
-    this.gebcoReliefLayer = L.tileLayer.wms(
-      'https://wms.gebco.net/mapserv?',
-      {
-        layers: 'GEBCO_LATEST',
-        format: 'image/png',
-        transparent: true,
-        version: '1.3.0',
-        pane: 'bathyPane',
-        opacity: 0.65,
-        attribution: 'GEBCO &mdash; Ocean Floor Topography',
-        maxZoom: 14,
-      }
-    );
-
-    // Default: Both bathymetry layers active over the basemap
-    this.noaaContoursLayer.addTo(this.map);
-    this.gebcoReliefLayer.addTo(this.map);
-
-    const baseLayersMap = {};
-    this.basemapPresets.forEach((p) => {
-      baseLayersMap[p.fullName] = p.group;
-    });
-
-    const overlayLayersMap = {
-      'NOAA Nautical Depth Contours': this.noaaContoursLayer,
-      'GEBCO Ocean Floor (3D Relief)': this.gebcoReliefLayer,
-    };
-
-    L.control
-      .layers(baseLayersMap, overlayLayersMap, { position: 'topleft' })
-      .addTo(this.map);
-
-    this.map.on('overlayadd overlayremove', () => {
-      this._syncBathyButtonState();
-    });
-
-    this.map.on('baselayerchange', (e) => {
-      const idx = this.basemapPresets.findIndex((p) => p.fullName === e.name);
-      if (idx !== -1) {
-        this.activeBasemapIndex = idx;
-        this._applyBasemapThemeClass(this.basemapPresets[idx].themeClass);
-        const btn = document.getElementById('btn-cycle-basemap');
-        if (btn) btn.textContent = this.basemapPresets[idx].label;
-      }
-    });
+    // Default to GEBCO 3D Ocean Relief
+    gebco3DGroup.addTo(this.map);
+    this._applyBasemapThemeClass('map-theme-3d-relief');
   }
 
   _applyBasemapThemeClass(themeClass) {
     const container = document.getElementById(this.mapElementId);
     if (!container) return;
     container.classList.remove(
-      'map-theme-deep-ocean',
+      'map-theme-3d-relief',
       'map-theme-satellite',
+      'map-theme-deep-ocean',
       'map-theme-daylight-ocean',
       'map-theme-natgeo',
       'map-theme-indigo-radar'
@@ -239,8 +127,8 @@ export class SurfMapController {
     }
   }
 
-  cycleBasemap() {
-    if (!this.map || !this.basemapPresets?.length) return 'Deep Ocean';
+  toggleBasemap() {
+    if (!this.map || !this.basemapPresets?.length) return '3D Relief';
     const current = this.basemapPresets[this.activeBasemapIndex];
     if (current && this.map.hasLayer(current.group)) {
       this.map.removeLayer(current.group);
@@ -252,56 +140,8 @@ export class SurfMapController {
     return next.label;
   }
 
-  _syncBathyButtonState() {
-    if (!this.map || !this.noaaContoursLayer || !this.gebcoReliefLayer) return;
-    const hasContours = this.map.hasLayer(this.noaaContoursLayer);
-    const hasRelief = this.map.hasLayer(this.gebcoReliefLayer);
-    const btn = document.getElementById('btn-toggle-bathy');
-    if (!btn) return;
-
-    if (hasContours && hasRelief) {
-      this.bathyModeIndex = 0;
-      btn.textContent = 'Bathy: Both';
-    } else if (hasContours && !hasRelief) {
-      this.bathyModeIndex = 1;
-      btn.textContent = 'Bathy: Contours';
-    } else if (!hasContours && hasRelief) {
-      this.bathyModeIndex = 2;
-      btn.textContent = 'Bathy: 3D Relief';
-    } else {
-      this.bathyModeIndex = 3;
-      btn.textContent = 'Bathy: OFF';
-    }
-  }
-
-  cycleBathy() {
-    if (!this.map || !this.noaaContoursLayer || !this.gebcoReliefLayer) return 'Both';
-    this.bathyModeIndex = (this.bathyModeIndex + 1) % this.bathyModes.length;
-    const mode = this.bathyModes[this.bathyModeIndex];
-
-    if (mode.contours) {
-      if (!this.map.hasLayer(this.noaaContoursLayer)) {
-        this.noaaContoursLayer.addTo(this.map);
-      }
-    } else {
-      if (this.map.hasLayer(this.noaaContoursLayer)) {
-        this.map.removeLayer(this.noaaContoursLayer);
-      }
-    }
-
-    if (mode.relief) {
-      if (!this.map.hasLayer(this.gebcoReliefLayer)) {
-        this.gebcoReliefLayer.addTo(this.map);
-      }
-    } else {
-      if (this.map.hasLayer(this.gebcoReliefLayer)) {
-        this.map.removeLayer(this.gebcoReliefLayer);
-      }
-    }
-
-    const btn = document.getElementById('btn-toggle-bathy');
-    if (btn) btn.textContent = `Bathy: ${mode.label}`;
-    return mode.label;
+  cycleBasemap() {
+    return this.toggleBasemap();
   }
 
   /**

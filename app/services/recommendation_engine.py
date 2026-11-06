@@ -77,6 +77,39 @@ class RecommendationEngine:
                     except Exception:
                         continue
 
+        if not hourly_model_points:
+            # Fallback to forecasts_fallback.json with dynamic re-baselined data
+            try:
+                from app.config import get_settings
+                import json
+                settings = get_settings()
+                fc_path = settings.FALLBACK_DATA_DIR / "forecasts_fallback.json"
+                if fc_path.exists():
+                    with open(fc_path, "r", encoding="utf-8") as f:
+                        fc_data = json.load(f)
+                    spot_fc = fc_data.get(spot_id, {}).get("hourly", [])
+                    if spot_fc:
+                        hourly_model_points = []
+                        for pt in spot_fc[:48]:
+                            pt_copy = dict(pt)
+                            if "wave_height" not in pt_copy and "breaking_height_ft" in pt_copy:
+                                pt_copy["wave_height"] = round(pt_copy["breaking_height_ft"] / max(0.1, k_net), 2)
+                            if "wave_period" not in pt_copy and "dominant_period_sec" in pt_copy:
+                                pt_copy["wave_period"] = pt_copy["dominant_period_sec"]
+                            hourly_model_points.append(pt_copy)
+            except Exception as e:
+                logger.warning(f"Could not load fallback forecasts for {spot_id}: {e}")
+
+        if not tide_map and hourly_model_points:
+            for h_idx in range(48):
+                t_dt = current_hour + timedelta(hours=h_idx)
+                h_k = t_dt.strftime("%Y-%m-%dT%H:00")
+                if h_idx < len(hourly_model_points):
+                    m_pt = hourly_model_points[h_idx]
+                    t_val = m_pt.get("tide_height_ft") or m_pt.get("tide_level_ft")
+                    if t_val is not None:
+                        tide_map[h_k] = float(t_val)
+
         for hour_idx in range(48):
             target_dt = current_hour + timedelta(hours=hour_idx)
             hour_key = target_dt.strftime("%Y-%m-%dT%H:00")

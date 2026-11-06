@@ -461,6 +461,7 @@ class BuoyService:
     def __init__(self, client: Optional[httpx.AsyncClient] = None, timeout: float = 5.0):
         self._client = client
         self._timeout = timeout
+        self._latest_tide_predictions: Dict[str, List[Dict[str, Any]]] = {}
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -578,7 +579,7 @@ class BuoyService:
             self.fetch_coops_product(coops_id, "water_level", date="latest"),
             self.fetch_coops_product(coops_id, "wind", date="latest"),
             self.fetch_coops_product(coops_id, "water_temperature", date="latest"),
-            self.fetch_coops_product(coops_id, "predictions", range=24),
+            self.fetch_coops_product(coops_id, "predictions", range=48),
             return_exceptions=True,
         )
 
@@ -605,6 +606,9 @@ class BuoyService:
         tide_level_ft = water_level_ft
         tide_status = None
         if isinstance(pred_resp, dict) and "predictions" in pred_resp:
+            self._latest_tide_predictions[coops_id] = pred_resp["predictions"]
+            self._latest_tide_predictions[st_key] = pred_resp["predictions"]
+            self._latest_tide_predictions[station_id] = pred_resp["predictions"]
             pts = parse_coops_predictions(pred_resp)
             slope_info = classify_tide_slope(pts, target_time=now_utc)
             tide_status = slope_info.get("tide_status")
@@ -690,12 +694,19 @@ class BuoyService:
 
         all_obs = [obs for obs in [inshore_obs, offshore_obs] + secondary_obs if obs is not None]
 
+        tide_preds = (
+            self._latest_tide_predictions.get(inshore_id)
+            or self._latest_tide_predictions.get(spot_meta.get("inshore_coops_station_id"))
+            or []
+        )
+
         return {
             "spot_id": spot_id,
             "inshore": inshore_obs,
             "offshore": offshore_obs,
             "secondary": secondary_obs,
             "all": all_obs,
+            "tide_predictions": tide_preds,
         }
 
     @staticmethod

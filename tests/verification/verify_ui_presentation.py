@@ -6,7 +6,7 @@ Automated Visual and Programmatic Verification Harness for Louisiana Surf Finder
 Checks:
 1. Spot pill (.spot-pin-pill) vs Wave Crests (.map-swell-crests / .swell-crest-arc) bounding-box collision (overlap == 0).
 2. Yellow marching wave crest color and animation properties.
-3. Prominent Lafayette Flag Logo branding (.brand-wave-emblem, 46-52px badge, SVG heraldic elements).
+3. Prominent Lafayette Flag Logo branding (.brand-wave-emblem, 60-68px badge, SVG heraldic elements).
 4. Spot marker selection, hover states, and drawer open interactions without JavaScript errors.
 5. Headless Chrome screenshot capture of all key views.
 
@@ -107,23 +107,6 @@ def run_verification(server_url: str = "http://127.0.0.1:8765", cdp_port: int = 
                             exception_records.append(res["params"])
                         elif res.get("id") == msg_id:
                             return res
-
-                # Background task to drain async messages
-                async def event_drain():
-                    while True:
-                        try:
-                            raw = await ws.recv()
-                            res = json.loads(raw)
-                            if res.get("method") == "Runtime.consoleAPICalled":
-                                console_records.append(res["params"])
-                            elif res.get("method") == "Runtime.exceptionThrown":
-                                exception_records.append(res["params"])
-                        except asyncio.CancelledError:
-                            break
-                        except Exception:
-                            break
-
-                drain_task = asyncio.create_task(event_drain())
 
                 await send("Runtime.enable")
                 await send("Page.enable")
@@ -262,8 +245,8 @@ def run_verification(server_url: str = "http://127.0.0.1:8765", cdp_port: int = 
                 """)
                 w = logo_data.get("width", 0)
                 h = logo_data.get("height", 0)
-                size_ok = (46 <= w <= 54) and (46 <= h <= 54)
-                print(f"  Emblem dimensions: {w}x{h}px (expected 46-52px, pass={size_ok})")
+                size_ok = (60 <= w <= 68) and (60 <= h <= 68)
+                print(f"  Emblem dimensions: {w}x{h}px (expected 60-68px, pass={size_ok})")
 
                 logo_file = "app/static/img/logo.svg"
                 svg_content = ""
@@ -348,12 +331,6 @@ def run_verification(server_url: str = "http://127.0.0.1:8765", cdp_port: int = 
                 # -----------------------------------------------------------
                 # TEST 5: Console & Exception Check
                 # -----------------------------------------------------------
-                drain_task.cancel()
-                try:
-                    await drain_task
-                except asyncio.CancelledError:
-                    pass
-
                 print("\n[TEST 5] Checking for JavaScript Console Errors & Exceptions...")
                 error_logs = [log for log in console_records if log.get("type") in ("error", "assert")]
                 print(f"  Console error entries: {len(error_logs)}")
@@ -375,7 +352,7 @@ def run_verification(server_url: str = "http://127.0.0.1:8765", cdp_port: int = 
                 print("=======================================================")
                 print(f"1. Collision-Free Spot Pills: {'PASS' if results['collision_check']['passed'] else 'FAIL'}")
                 print(f"2. Yellow Wave Crest Symbols: {'PASS' if results['yellow_wave_crest_check']['passed'] else 'FAIL'}")
-                print(f"3. Lafayette Flag Logo (46-52px): {'PASS' if results['lafayette_logo_check']['passed'] else 'FAIL'}")
+                print(f"3. Lafayette Flag Logo (60-68px): {'PASS' if results['lafayette_logo_check']['passed'] else 'FAIL'}")
                 print(f"4. UI & Drawer Interactions:  {'PASS' if results['interactions_check']['passed'] else 'FAIL'}")
                 print(f"5. Zero JavaScript Errors:    {'PASS' if results['console_errors_check']['passed'] else 'FAIL'}")
                 print("=======================================================")

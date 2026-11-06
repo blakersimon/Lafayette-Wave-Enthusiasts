@@ -2,7 +2,7 @@
 tests/test_ui_assets.py
 Comprehensive verification for Gen 2 UI enhancements:
 1. Lafayette / Acadiana flag logo SVG heraldic structure and curling Gulf surf wave.
-2. CSS styling for the 50px emblem, decoupled map marker beacon, sticky table headers, and wind regimes.
+2. CSS styling for the enlarged emblem, decoupled map marker beacon, sticky table headers, and wind regimes.
 3. JavaScript decoupled map marker architecture with yellow moving wave crests.
 4. Chart.js point click scrubber interaction.
 5. HTML template structure for relocated confidence pill and wetsuit notes.
@@ -58,9 +58,9 @@ def test_brand_emblem_and_layout_in_css():
     assert css_path.exists(), "styles.css must exist"
     css = css_path.read_text(encoding="utf-8")
 
-    # 1. Brand emblem sizing & styling (50px badge)
-    assert "inline-size: 50px;" in css
-    assert "block-size: 50px;" in css
+    # 1. Brand emblem sizing & styling (64px badge)
+    assert "inline-size: 64px;" in css
+    assert "block-size: 64px;" in css
     assert "brand-wave-emblem" in css
 
     # 2. Decoupled marker architecture
@@ -140,7 +140,7 @@ def test_html_template_hero_confidence_and_wetsuit_structure():
     html = html_path.read_text(encoding="utf-8")
 
     # Emblem image sizing
-    assert 'width="48" height="48"' in html
+    assert 'width="64" height="64"' in html
     assert 'alt="Lafayette Wave Enthusiasts Emblem"' in html
 
     # Confidence pill in hero overlay

@@ -168,6 +168,88 @@ class WeatherService:
             logger.warning(f"Open-Meteo fetch failed for {spot_id}: {exc}; using fallback")
             return self._get_fallback_reading(spot_id, "open_meteo")
 
+    async def fetch_open_meteo_hourly(self, spot_id: str) -> List[Dict[str, Any]]:
+        """
+        Fetch 48-hour hourly wave and weather forecast series from Open-Meteo
+        starting at the current UTC hour.
+        """
+        meta = SPOTS.get(spot_id)
+        if not meta:
+            return []
+        lat = meta["coordinates"]["latitude"]
+        lng = meta["coordinates"]["longitude"]
+
+        marine_params = {
+            "latitude": lat,
+            "longitude": lng,
+            "hourly": "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period",
+            "length_unit": "imperial",
+            "wind_speed_unit": "mph",
+            "timezone": "UTC",
+            "forecast_days": 3,
+        }
+        weather_params = {
+            "latitude": lat,
+            "longitude": lng,
+            "hourly": "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m",
+            "wind_speed_unit": "mph",
+            "temperature_unit": "fahrenheit",
+            "timezone": "UTC",
+            "forecast_days": 3,
+        }
+
+        client = await self._get_client()
+        try:
+            marine_resp, weather_resp = await asyncio.gather(
+                client.get(OPEN_METEO_MARINE_URL, params=marine_params),
+                client.get(OPEN_METEO_WEATHER_URL, params=weather_params),
+                return_exceptions=True,
+            )
+
+            if isinstance(marine_resp, Exception) or getattr(marine_resp, "status_code", None) != 200:
+                logger.warning(f"Open-Meteo hourly marine failed for {spot_id}: {marine_resp}")
+                return []
+
+            marine_data = marine_resp.json()
+            wx_data = {}
+            if not isinstance(weather_resp, Exception) and getattr(weather_resp, "status_code", None) == 200:
+                wx_data = weather_resp.json()
+
+            hourly_m = marine_data.get("hourly", {})
+            hourly_wx = wx_data.get("hourly", {})
+            times = hourly_m.get("time", [])
+
+            now_utc_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00")
+            idx = 0
+            for i, t in enumerate(times):
+                if t >= now_utc_str:
+                    idx = i
+                    break
+
+            m_wave_h = hourly_m.get("wave_height", [])
+            m_wave_p = hourly_m.get("wave_period", [])
+            m_wave_d = hourly_m.get("wave_direction", [])
+            w_wind_s = hourly_wx.get("wind_speed_10m", [])
+            w_wind_d = hourly_wx.get("wind_direction_10m", [])
+            w_air_t = hourly_wx.get("temperature_2m", [])
+
+            pts: List[Dict[str, Any]] = []
+            end_idx = min(len(times), idx + 48)
+            for i in range(idx, end_idx):
+                pts.append({
+                    "timestamp": times[i] if i < len(times) else None,
+                    "wave_height": m_wave_h[i] if i < len(m_wave_h) and m_wave_h[i] is not None else 2.5,
+                    "wave_period": m_wave_p[i] if i < len(m_wave_p) and m_wave_p[i] is not None else 6.0,
+                    "wave_direction": m_wave_d[i] if i < len(m_wave_d) and m_wave_d[i] is not None else 160.0,
+                    "wind_speed_10m": w_wind_s[i] if i < len(w_wind_s) and w_wind_s[i] is not None else 10.0,
+                    "wind_direction_10m": w_wind_d[i] if i < len(w_wind_d) and w_wind_d[i] is not None else 0.0,
+                    "temperature_2m": w_air_t[i] if i < len(w_air_t) and w_air_t[i] is not None else 72.0,
+                })
+            return pts
+        except Exception as exc:
+            logger.warning(f"Open-Meteo hourly fetch failed for {spot_id}: {exc}")
+            return []
+
     def _parse_open_meteo_reading(
         self, spot_id: str, marine_data: Dict[str, Any], weather_data: Dict[str, Any]
     ) -> NormalizedMarineReading:

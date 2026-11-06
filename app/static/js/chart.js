@@ -7,6 +7,21 @@ export class ForecastChartController {
   constructor(canvasId) {
     this.canvasId = canvasId;
     this.chartInstance = null;
+    this.scrubbedIndex = null;
+  }
+
+  setScrubbedHour(hourIndex) {
+    this.scrubbedIndex = hourIndex;
+    if (this.chartInstance) {
+      this.chartInstance.options.scrubbedIndex = hourIndex;
+      this.chartInstance.update('none');
+    }
+  }
+
+  resize() {
+    if (this.chartInstance) {
+      this.chartInstance.resize();
+    }
   }
 
   render(hourlyPoints = []) {
@@ -73,7 +88,35 @@ export class ForecastChartController {
           },
         ],
       },
+      plugins: [
+        {
+          id: 'scrubberCursor',
+          afterDraw: (chart) => {
+            const idx = chart.config.options.scrubbedIndex;
+            if (idx !== null && idx !== undefined && idx >= 0) {
+              const meta = chart.getDatasetMeta(0);
+              if (meta && meta.data && meta.data[idx]) {
+                const pt = meta.data[idx];
+                const ctx = chart.ctx;
+                const yAxis = chart.scales.yWave;
+                if (pt && yAxis) {
+                  ctx.save();
+                  ctx.beginPath();
+                  ctx.moveTo(pt.x, yAxis.top);
+                  ctx.lineTo(pt.x, yAxis.bottom);
+                  ctx.lineWidth = 2;
+                  ctx.setLineDash([4, 4]);
+                  ctx.strokeStyle = '#facc15';
+                  ctx.stroke();
+                  ctx.restore();
+                }
+              }
+            }
+          },
+        },
+      ],
       options: {
+        scrubbedIndex: this.scrubbedIndex,
         responsive: true,
         maintainAspectRatio: false,
         onClick: (evt, activeEls) => {

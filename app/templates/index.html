@@ -28,7 +28,7 @@
     <header class="floating-top-bar" role="banner">
       <div class="brand-cluster">
         <div class="brand-wave-emblem" aria-hidden="true">
-          <img src="/static/img/logo.svg" alt="Lafayette Wave Enthusiasts Emblem" width="48" height="48">
+          <img src="/static/img/logo.svg" alt="Lafayette Wave Enthusiasts Emblem" width="64" height="64">
         </div>
         <div class="brand-titles">
           <h1 class="brand-title">Lafayette Wave Enthusiasts</h1>
@@ -54,15 +54,13 @@
 
       <!-- Compact Map Controls -->
       <div class="top-bar-actions">
-        <button type="button" class="btn-pill-ghost" id="btn-cycle-basemap" title="Click to cycle through 5 modern basemap styles">Deep Ocean</button>
-        <button type="button" class="btn-pill-ghost" id="btn-toggle-bathy" title="Cycle bathymetry: Both, Contours, 3D Relief, or Off">Bathy: Both</button>
-        <button type="button" class="btn-pill-ghost" id="btn-view-coast" title="Reset map to full Louisiana Coast">LA Coast</button>
-        <button type="button" class="btn-pill-ghost" id="btn-toggle-vectors" title="Toggle offshore buoys on map">Buoys: ON</button>
-        <button type="button" class="btn-pill-accent" id="btn-refresh" title="Refresh live buoys &amp; surf forecasts">
-          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6M16.5 3.5v3.9h-3.9" stroke-linecap="round" stroke-linejoin="round"/>
+        <button type="button" class="btn-pill-ghost btn-basemap-toggle" id="btn-toggle-basemap" title="Toggle between 3D Ocean Relief and Satellite imagery" aria-label="Toggle basemap between 3D Relief and Satellite">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polygon points="10,2 18,6 18,14 10,18 2,14 2,6" />
+            <polyline points="2,6 10,10 18,6" />
+            <line x1="10" y1="10" x2="10" y2="18" />
           </svg>
-          <span>Sync</span>
+          <span id="basemap-toggle-label">3D Relief</span>
         </button>
       </div>
     </header>

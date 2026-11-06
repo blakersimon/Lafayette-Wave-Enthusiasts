@@ -152,13 +152,14 @@ canvas {
 .brand-cluster {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .brand-titles {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   white-space: nowrap;
 }
 
@@ -166,13 +167,13 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 50px;
-  block-size: 50px;
+  inline-size: 64px;
+  block-size: 64px;
   border-radius: 50%;
   overflow: hidden;
   background: radial-gradient(circle at 35% 35%, rgba(56, 189, 248, 0.28), rgba(4, 13, 26, 0.88));
-  border: 1.5px solid rgba(125, 211, 252, 0.45);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.38), 0 0 8px rgba(245, 158, 11, 0.25);
+  border: 2px solid rgba(125, 211, 252, 0.50);
+  box-shadow: 0 0 22px rgba(56, 189, 248, 0.42), 0 0 10px rgba(245, 158, 11, 0.28);
   flex-shrink: 0;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -185,16 +186,16 @@ canvas {
 }
 
 .brand-cluster:hover .brand-wave-emblem {
-  transform: scale(1.06);
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.58), 0 0 12px rgba(245, 158, 11, 0.4);
-  border-color: rgba(125, 211, 252, 0.7);
+  transform: scale(1.05);
+  box-shadow: 0 0 28px rgba(56, 189, 248, 0.62), 0 0 14px rgba(245, 158, 11, 0.45);
+  border-color: rgba(125, 211, 252, 0.8);
 }
 
 .brand-title {
   font-family: var(--font-display);
-  font-size: 0.98rem;
+  font-size: 1.18rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.015em;
   color: var(--text-primary);
   line-height: 1.15;
   white-space: nowrap;
@@ -203,9 +204,9 @@ canvas {
 .brand-tag {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.64rem;
+  font-size: 0.74rem;
   color: var(--seafoam);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -2169,24 +2170,31 @@ canvas {
 }
 
 /* Modern Basemap Theme Filters (Applied only to tile pane so markers/wave crests stay vibrant) */
-.map-theme-deep-ocean .leaflet-tile-pane {
-  filter: brightness(0.66) contrast(1.28) saturate(1.45) hue-rotate(192deg) invert(0.92);
+/* GEBCO 3D Ocean Relief Basemap Theme: Dark velvet land silhouette with glowing oceanic relief */
+.map-theme-3d-relief .leaflet-tile-pane {
+  filter: brightness(0.74) contrast(1.42) saturate(1.5) hue-rotate(212deg) invert(0.96);
 }
 
 .map-theme-satellite .leaflet-tile-pane {
   filter: brightness(0.92) contrast(1.1) saturate(1.18);
 }
 
-.map-theme-daylight-ocean .leaflet-tile-pane {
-  filter: contrast(1.06) saturate(1.15);
+.map-theme-deep-ocean .leaflet-tile-pane {
+  filter: brightness(0.66) contrast(1.28) saturate(1.45) hue-rotate(192deg) invert(0.92);
 }
 
-.map-theme-natgeo .leaflet-tile-pane {
-  filter: brightness(0.92) contrast(1.08) saturate(1.12);
+.btn-basemap-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
 }
 
-.map-theme-indigo-radar .leaflet-tile-pane {
-  filter: sepia(0.38) hue-rotate(175deg) saturate(2.4) brightness(0.95) contrast(1.15);
+.btn-basemap-toggle svg {
+  color: var(--swell-cyan);
 }
 
 .buoy-popup-card {
@@ -2276,8 +2284,12 @@ canvas {
   }
 
   .brand-wave-emblem {
-    inline-size: 42px;
-    block-size: 42px;
+    inline-size: 48px;
+    block-size: 48px;
+  }
+
+  .brand-title {
+    font-size: 1.05rem;
   }
 
   .btn-scrubber-chip.chip-golden {
