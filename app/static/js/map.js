@@ -70,19 +70,7 @@ export class SurfMapController {
         maxZoom: 13,
       }
     );
-    const gebcoRelief = L.tileLayer.wms(
-      'https://wms.gebco.net/mapserv?',
-      {
-        layers: 'GEBCO_LATEST',
-        format: 'image/png',
-        transparent: true,
-        version: '1.3.0',
-        opacity: 0.70,
-        attribution: 'GEBCO 3D Relief &copy; IHO/IOC UNESCO',
-        maxZoom: 14,
-      }
-    );
-    const gebco3DGroup = L.layerGroup([oceanFloorBase, gebcoRelief, oceanFloorRef]);
+    const gebco3DGroup = L.layerGroup([oceanFloorBase, oceanFloorRef]);
 
     // 2. Coastal Satellite Hybrid (High-Res Aerial + Place Labels)
     const esriSatBase = L.tileLayer(
